@@ -4,5 +4,4 @@
 library;
 
 export 'src/eppo_sdk_base.dart';
-
-// TODO: Export any libraries intended for clients of this package.
+export 'src/configuration_wire_protocol.dart';

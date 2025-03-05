@@ -31,6 +31,8 @@ jobs:
           sdk: 'stable'
       - name: Install dependencies
         run: dart pub get
+      - name: Fetch test data
+        run: make test-data
       - name: Run tests
         run: dart test
       - name: Run example
