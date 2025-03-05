@@ -41,4 +41,5 @@ test-data:
 
 .PHONY: test
 test: test-data
+	dart analyze --fatal-infos
 	dart test

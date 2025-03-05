@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:test/test.dart';
-import '../lib/src/configuration_wire_protocol.dart';
+import 'package:eppo/src/configuration_wire_protocol.dart';
 
 void main() {
   group('ObfuscatedPrecomputedConfigurationResponse', () {

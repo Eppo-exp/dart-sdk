@@ -145,19 +145,15 @@ class ObfuscatedPrecomputedBandit {
 
   factory ObfuscatedPrecomputedBandit.fromJson(Map<String, dynamic> json) {
     return ObfuscatedPrecomputedBandit(
-      banditKey: json['banditKey'] as Base64String,
-      action: json['action'] as Base64String,
-      modelVersion: json['modelVersion'] as Base64String,
-      actionNumericAttributes:
-          (json['actionNumericAttributes'] as Map<String, dynamic>).map(
-            (key, value) =>
-                MapEntry(key as Base64String, value as Base64String),
-          ),
-      actionCategoricalAttributes:
-          (json['actionCategoricalAttributes'] as Map<String, dynamic>).map(
-            (key, value) =>
-                MapEntry(key as Base64String, value as Base64String),
-          ),
+      banditKey: json['banditKey'] as String,
+      action: json['action'] as String,
+      modelVersion: json['modelVersion'] as String,
+      actionNumericAttributes: (json['actionNumericAttributes']
+              as Map<String, dynamic>)
+          .map((key, value) => MapEntry(key, value)),
+      actionCategoricalAttributes: (json['actionCategoricalAttributes']
+              as Map<String, dynamic>)
+          .map((key, value) => MapEntry(key, value)),
       actionProbability: json['actionProbability'] as double,
       optimalityGap: json['optimalityGap'] as double,
     );
