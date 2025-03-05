@@ -29,9 +29,9 @@ class EppoApiClient {
     String? baseUrl,
     int? requestTimeoutMs,
     EppoHttpClient? httpClient,
-  }) : baseUrl = baseUrl ?? precomputedBaseUrl,
-       requestTimeoutMs = requestTimeoutMs ?? defaultRequestTimeoutMs,
-       _httpClient = httpClient ?? DefaultEppoHttpClient();
+  })  : baseUrl = baseUrl ?? precomputedBaseUrl,
+        requestTimeoutMs = requestTimeoutMs ?? defaultRequestTimeoutMs,
+        _httpClient = httpClient ?? DefaultEppoHttpClient();
 
   /// Fetches precomputed flags for a subject
   Future<ObfuscatedPrecomputedConfigurationResponse> fetchPrecomputedFlags({
@@ -55,7 +55,6 @@ class EppoApiClient {
 
     final url = '$baseUrl$precomputedFlagsEndpoint?$queryString';
 
-    print('Fetching precomputed flags from $url');
     // Prepare the payload
     final payload = {
       'subject_key': subjectKey,
