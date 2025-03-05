@@ -9,10 +9,9 @@ void main() {
     late Map<String, dynamic> response;
 
     setUpAll(() {
-      final jsonString =
-          File(
-            'test/test-sample-data/configuration-wire/precomputed-v1.json',
-          ).readAsStringSync();
+      final jsonString = File(
+        'test/test-sample-data/configuration-wire/precomputed-v1.json',
+      ).readAsStringSync();
 
       final jsonData = jsonDecode(jsonString);
       final responseString = jsonData['precomputed']['response'] as String;
@@ -44,7 +43,7 @@ void main() {
       // Check the first flag (STRING type)
       final stringFlag = config.flags['41a27b85ebdd7b1a5ae367a1a240a214'];
       expect(stringFlag, isNotNull);
-      expect(stringFlag!.variationType, equals('STRING'));
+      expect(stringFlag!.variationType, equals(VariationType.string));
       expect(stringFlag.variationValue, equals('cmVk'));
       expect(stringFlag.doLog, isTrue);
       expect(stringFlag.allocationKey, equals('YWxsb2NhdGlvbi0xMjM='));
@@ -54,25 +53,25 @@ void main() {
       // Check the boolean flag
       final booleanFlag = config.flags['2309e3afb59efcf9675c0a8eaa565879'];
       expect(booleanFlag, isNotNull);
-      expect(booleanFlag!.variationType, equals('BOOLEAN'));
+      expect(booleanFlag!.variationType, equals(VariationType.boolean));
       expect(booleanFlag.variationValue, equals('dHJ1ZQ=='));
 
       // Check the integer flag
       final integerFlag = config.flags['06307a361b7f244ca792cc0dc5f264f7'];
       expect(integerFlag, isNotNull);
-      expect(integerFlag!.variationType, equals('INTEGER'));
+      expect(integerFlag!.variationType, equals(VariationType.integer));
       expect(integerFlag.variationValue, equals('NDI='));
 
       // Check the numeric flag
       final numericFlag = config.flags['60d9c95b958bdfe620111a1ab618c1f2'];
       expect(numericFlag, isNotNull);
-      expect(numericFlag!.variationType, equals('NUMERIC'));
+      expect(numericFlag!.variationType, equals(VariationType.numeric));
       expect(numericFlag.variationValue, equals('My4xNA=='));
 
       // Check the JSON flag
       final jsonFlag = config.flags['155bbb597e48b282ceff3a342f28001f'];
       expect(jsonFlag, isNotNull);
-      expect(jsonFlag!.variationType, equals('JSON'));
+      expect(jsonFlag!.variationType, equals(VariationType.json));
       expect(
         jsonFlag.variationValue,
         equals('eyJrZXkiOiJ2YWx1ZSIsIm51bWJlciI6MTIzfQ=='),

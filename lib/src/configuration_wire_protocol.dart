@@ -35,28 +35,37 @@ class ObfuscatedPrecomputedConfigurationResponse {
   factory ObfuscatedPrecomputedConfigurationResponse.fromJson(
     Map<String, dynamic> json,
   ) {
-    return ObfuscatedPrecomputedConfigurationResponse(
+    // Safely convert the flags map to Map<String, dynamic>
+    final flagsMap = json['flags'] as Map;
+    final typedFlagsMap = Map<String, dynamic>.from(flagsMap);
+
+    final response = ObfuscatedPrecomputedConfigurationResponse(
       createdAt: json['createdAt'] as String,
-      environment:
-          json['environment'] != null
-              ? (json['environment'] is String
-                  ? json['environment'] as String
-                  : (json['environment'] as Map<String, dynamic>)['name']
-                      as String)
-              : null,
+      environment: json['environment'] != null
+          ? (json['environment'] is String
+              ? json['environment'] as String
+              : (json['environment'] as Map<String, dynamic>)['name'] as String)
+          : null,
       salt: json['salt'] as String,
-      flags: (json['flags'] as Map<String, dynamic>).map(
-        (key, value) =>
-            MapEntry(key, ObfuscatedPrecomputedFlag.fromJson(value)),
+      flags: typedFlagsMap.map(
+        (key, value) {
+          return MapEntry(
+              key,
+              ObfuscatedPrecomputedFlag.fromJson(
+                  value as Map<String, dynamic>));
+        },
       ),
-      bandits:
-          json['bandits'] != null
-              ? (json['bandits'] as Map<String, dynamic>).map(
-                (key, value) =>
-                    MapEntry(key, ObfuscatedPrecomputedBandit.fromJson(value)),
+      bandits: json['bandits'] != null
+          ? (json['bandits'] as Map).cast<String, dynamic>().map(
+                (key, value) => MapEntry(
+                    key,
+                    ObfuscatedPrecomputedBandit.fromJson(
+                        value as Map<String, dynamic>)),
               )
-              : {},
+          : {},
     );
+
+    return response;
   }
 }
 
@@ -69,7 +78,7 @@ class ObfuscatedPrecomputedFlag {
   final MD5String? variationKey;
 
   /// Type of variation
-  final String variationType;
+  final VariationType variationType;
 
   /// Optional extra logging information
   final Map<String, String>? extraLogging;
@@ -90,17 +99,34 @@ class ObfuscatedPrecomputedFlag {
   });
 
   factory ObfuscatedPrecomputedFlag.fromJson(Map<String, dynamic> json) {
-    return ObfuscatedPrecomputedFlag(
-      allocationKey: json['allocationKey'] as MD5String?,
-      variationKey: json['variationKey'] as MD5String?,
-      variationType: json['variationType'] as String,
-      extraLogging:
-          json['extraLogging'] != null
-              ? (json['extraLogging'] as Map<String, dynamic>)
-                  .cast<String, String>()
-              : null,
+    // Handle extraLogging safely
+    Map<String, String>? extraLoggingMap;
+    if (json['extraLogging'] != null) {
+      final extraLoggingRaw = json['extraLogging'] as Map;
+      extraLoggingMap = Map<String, String>.fromEntries(
+        extraLoggingRaw.entries.map(
+            (entry) => MapEntry(entry.key.toString(), entry.value.toString())),
+      );
+    }
+
+    final flag = ObfuscatedPrecomputedFlag(
+      allocationKey: json['allocationKey'] as String?,
+      variationKey: json['variationKey'] as String?,
+      variationType: _parseVariationType(json['variationType'] as String),
+      extraLogging: extraLoggingMap,
       doLog: json['doLog'] as bool,
-      variationValue: json['variationValue'] as Base64String,
+      variationValue: json['variationValue'] as String,
+    );
+
+    return flag;
+  }
+
+  // Helper method to parse variation type case-insensitively
+  static VariationType _parseVariationType(String typeStr) {
+    final normalized = typeStr.toLowerCase();
+    return VariationType.values.firstWhere(
+      (type) => type.toString().split('.').last == normalized,
+      orElse: () => throw ArgumentError('Invalid variation type: $typeStr'),
     );
   }
 }
@@ -139,18 +165,28 @@ class ObfuscatedPrecomputedBandit {
   });
 
   factory ObfuscatedPrecomputedBandit.fromJson(Map<String, dynamic> json) {
+    // Safely handle the numeric attributes map
+    final numericAttrsRaw = json['actionNumericAttributes'] as Map;
+    final numericAttrs = Map<String, String>.fromEntries(
+      numericAttrsRaw.entries.map(
+          (entry) => MapEntry(entry.key.toString(), entry.value.toString())),
+    );
+
+    // Safely handle the categorical attributes map
+    final categoricalAttrsRaw = json['actionCategoricalAttributes'] as Map;
+    final categoricalAttrs = Map<String, String>.fromEntries(
+      categoricalAttrsRaw.entries.map(
+          (entry) => MapEntry(entry.key.toString(), entry.value.toString())),
+    );
+
     return ObfuscatedPrecomputedBandit(
       banditKey: json['banditKey'] as String,
       action: json['action'] as String,
       modelVersion: json['modelVersion'] as String,
-      actionNumericAttributes: (json['actionNumericAttributes']
-              as Map<String, dynamic>)
-          .map((key, value) => MapEntry(key, value)),
-      actionCategoricalAttributes: (json['actionCategoricalAttributes']
-              as Map<String, dynamic>)
-          .map((key, value) => MapEntry(key, value)),
-      actionProbability: json['actionProbability'] as double,
-      optimalityGap: json['optimalityGap'] as double,
+      actionNumericAttributes: numericAttrs,
+      actionCategoricalAttributes: categoricalAttrs,
+      actionProbability: (json['actionProbability'] as num).toDouble(),
+      optimalityGap: (json['optimalityGap'] as num).toDouble(),
     );
   }
 }
@@ -160,3 +196,35 @@ typedef MD5String = String;
 
 /// Type alias for Base64 encoded strings
 typedef Base64String = String;
+
+/// Enumeration of supported variation types
+enum VariationType {
+  /// String type variations
+  string,
+
+  /// Boolean type variations
+  boolean,
+
+  /// Integer type variations
+  integer,
+
+  /// Numeric (double) type variations
+  numeric,
+
+  /// JSON object type variations
+  json,
+}
+
+/// Checks if the expected type matches the actual type
+bool checkTypeMatch(VariationType expected, VariationType actual) {
+  if (expected == actual) {
+    return true;
+  }
+
+  // Special case: integer is compatible with numeric
+  if (expected == VariationType.numeric && actual == VariationType.integer) {
+    return true;
+  }
+
+  return false;
+}

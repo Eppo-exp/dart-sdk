@@ -35,3 +35,5 @@ jobs:
         run: make test-data
       - name: Run tests
         run: dart test
+      - name: Run example
+        run: dart example/precompute_client.dart ${{ secrets.SDK_KEY }} github-subject

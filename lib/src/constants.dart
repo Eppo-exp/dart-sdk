@@ -6,3 +6,6 @@ const String precomputedFlagsEndpoint = '/assignments';
 
 /// Default request timeout in milliseconds
 const int defaultRequestTimeoutMs = 5000;
+
+/// Default logger prefix
+const String defaultLoggerPrefix = 'Eppo';

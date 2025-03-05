@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'package:eppo/src/api_client.dart';
-import 'package:eppo/src/http_client.dart';
+import 'package:eppo/eppo_sdk.dart';
 import 'package:eppo/src/sdk_version.dart' as sdk;
 import 'package:test/test.dart';
-import 'package:eppo/src/subject.dart';
 
 class MockEppoHttpClient implements EppoHttpClient {
   final Map<String, dynamic>? responseData;
@@ -124,7 +122,7 @@ void main() {
         // Assert
         expect(result.flags.length, 1);
         expect(result.flags['test-flag']?.variationValue, 'test-value');
-        expect(result.flags['test-flag']?.variationType, 'string');
+        expect(result.flags['test-flag']?.variationType, VariationType.string);
         expect(result.salt, 'test-salt');
 
         // Verify request was made correctly
