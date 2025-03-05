@@ -86,16 +86,12 @@ class EppoPrecomputedClient {
         banditActions: _precompute.banditActions ?? {},
       );
 
-      // Ensure the salt is set before updating the store
+      // Update the store with the received salt and format
       if (response.salt.isEmpty) {
         _logger.warning('$defaultLoggerPrefix Received empty salt from server');
-        // Use a default salt for testing purposes
-        _precomputedFlagStore.update(response.flags,
-            salt: 'test-salt', format: response.format.toString());
-      } else {
-        _precomputedFlagStore.update(response.flags,
-            salt: response.salt, format: response.format.toString());
       }
+      _precomputedFlagStore.update(response.flags,
+          salt: response.salt, format: response.format.toString());
 
       _logger
           .info('$defaultLoggerPrefix Successfully fetched precomputed flags');
