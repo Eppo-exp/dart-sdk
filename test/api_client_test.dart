@@ -4,7 +4,6 @@ import 'package:eppo/src/api_client.dart';
 import 'package:eppo/src/http_client.dart';
 import 'package:eppo/src/sdk_version.dart' as sdk;
 import 'package:test/test.dart';
-import 'package:eppo/src/subject.dart';
 
 class MockEppoHttpClient implements EppoHttpClient {
   final Map<String, dynamic>? responseData;
