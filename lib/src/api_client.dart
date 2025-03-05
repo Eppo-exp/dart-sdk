@@ -1,5 +1,4 @@
 import 'package:eppo/eppo_sdk.dart';
-import 'package:eppo/src/http_client.dart';
 import 'package:eppo/src/sdk_version.dart' as sdk;
 
 /// API client for Eppo services

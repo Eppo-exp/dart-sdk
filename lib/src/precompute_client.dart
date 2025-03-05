@@ -1,9 +1,6 @@
 import 'dart:convert';
 
 import 'package:eppo/eppo_sdk.dart';
-import 'package:eppo/src/api_client.dart';
-import 'package:eppo/src/crypto.dart';
-import 'package:eppo/src/configuration_store.dart';
 import 'package:eppo/src/sdk_version.dart' as sdk;
 import 'package:logging/logging.dart';
 
