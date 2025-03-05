@@ -5,3 +5,5 @@ library;
 
 export 'src/eppo_sdk_base.dart';
 export 'src/configuration_wire_protocol.dart';
+export 'src/subject.dart';
+export 'src/constants.dart';

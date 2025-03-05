@@ -62,9 +62,6 @@ class ObfuscatedPrecomputedConfigurationResponse {
 
 /// Represents a precomputed flag with a value and type
 class ObfuscatedPrecomputedFlag {
-  /// Optional flag key
-  final MD5String? flagKey;
-
   /// Optional allocation key
   final MD5String? allocationKey;
 
@@ -84,7 +81,6 @@ class ObfuscatedPrecomputedFlag {
   final Base64String variationValue;
 
   ObfuscatedPrecomputedFlag({
-    this.flagKey,
     this.allocationKey,
     this.variationKey,
     required this.variationType,
@@ -95,7 +91,6 @@ class ObfuscatedPrecomputedFlag {
 
   factory ObfuscatedPrecomputedFlag.fromJson(Map<String, dynamic> json) {
     return ObfuscatedPrecomputedFlag(
-      flagKey: json['flagKey'] as MD5String?,
       allocationKey: json['allocationKey'] as MD5String?,
       variationKey: json['variationKey'] as MD5String?,
       variationType: json['variationType'] as String,
