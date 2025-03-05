@@ -76,14 +76,31 @@ void main() {
         // Arrange
         final mockResponse = {
           'flags': {
-            'test-flag': {'value': 'test-value', 'rule_id': 'rule-1'},
+            'test-flag': {
+              'allocationKey': 'allocation-1',
+              'variationKey': 'variation-1',
+              'variationType': 'string',
+              'extraLogging': {'key1': 'value1'},
+              'doLog': true,
+              'variationValue': 'test-value',
+            },
           },
-          'bandits': {},
+          'bandits': {
+            'test-bandit': {
+              'banditKey': 'bandit-1',
+              'action': 'action-1',
+              'modelVersion': 'v1',
+              'actionNumericAttributes': {'attr1': 'value1'},
+              'actionCategoricalAttributes': {'cat1': 'value1'},
+              'actionProbability': 0.75,
+              'optimalityGap': 0.1,
+            },
+          },
           'salt': 'test-salt',
-          'format': 'json',
-          'obfuscated': false,
+          'format': 'precomputed',
+          'obfuscated': true,
           'createdAt': '2023-01-01T00:00:00Z',
-          'environment': {'name': 'test'},
+          'environment': {'name': 'test-env'},
         };
 
         mockHttpClient = MockEppoHttpClient(responseData: mockResponse);
@@ -107,6 +124,7 @@ void main() {
         // Assert
         expect(result.flags.length, 1);
         expect(result.flags['test-flag']?.variationValue, 'test-value');
+        expect(result.flags['test-flag']?.variationType, 'string');
         expect(result.salt, 'test-salt');
 
         // Verify request was made correctly
