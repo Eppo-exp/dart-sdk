@@ -13,3 +13,4 @@ export 'src/http_client.dart';
 export 'src/sdk_version.dart';
 export 'src/configuration_store.dart';
 export 'src/crypto.dart';
+export 'src/assignment_logger.dart';
