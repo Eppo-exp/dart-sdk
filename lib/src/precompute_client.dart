@@ -15,6 +15,9 @@ class SdkOptions {
   /// Assignment logger
   final AssignmentLogger? assignmentLogger;
 
+  /// Bandit logger
+  final BanditLogger? banditLogger;
+
   /// Base URL for API requests
   final String? baseUrl;
 
@@ -44,6 +47,7 @@ class SdkOptions {
     required this.sdkKey,
     required this.sdkPlatform,
     this.assignmentLogger,
+    this.banditLogger,
     this.baseUrl,
     this.requestTimeoutMs,
     this.throwOnFailedInitialization,
@@ -71,6 +75,7 @@ class EppoPrecomputedClient {
   final SdkOptions _sdkOptions;
   final PrecomputeArguments _precompute;
   final ConfigurationStore<ObfuscatedPrecomputedFlag> _precomputedFlagStore;
+  final ConfigurationStore<ObfuscatedPrecomputedBandit> _precomputedBanditStore;
   EppoApiClient? _apiClient;
   final Logger _logger = Logger('EppoPrecomputedClient');
 
@@ -80,6 +85,8 @@ class EppoPrecomputedClient {
         _precompute = precompute,
         _precomputedFlagStore =
             InMemoryConfigurationStore<ObfuscatedPrecomputedFlag>(),
+        _precomputedBanditStore =
+            InMemoryConfigurationStore<ObfuscatedPrecomputedBandit>(),
         _apiClient = sdkOptions.apiClient;
 
   /// Fetches precomputed flags from the server
@@ -103,11 +110,9 @@ class EppoPrecomputedClient {
         banditActions: _precompute.banditActions ?? {},
       );
 
-      // Update the store with the received salt and format
-      if (response.salt.isEmpty) {
-        _logger.warning('$defaultLoggerPrefix Received empty salt from server');
-      }
       _precomputedFlagStore.update(response.flags,
+          salt: response.salt, format: response.format.toString());
+      _precomputedBanditStore.update(response.bandits,
           salt: response.salt, format: response.format.toString());
 
       _logger
@@ -188,6 +193,69 @@ class EppoPrecomputedClient {
         return defaultValue;
       },
     );
+  }
+
+  /// Gets a bandit action for a flag
+  BanditEvaluation getBanditAction(
+    String flagKey,
+    String defaultValue,
+  ) {
+    final obfuscatedBandit = _getPrecomputedBandit(flagKey);
+
+    if (obfuscatedBandit == null) {
+      _logger.warning(
+        '$defaultLoggerPrefix No assigned variation. Bandit not found: $flagKey',
+      );
+      return BanditEvaluation(variation: defaultValue, action: null);
+    }
+
+    // Decode the bandit inline
+    final decodedBanditKey = decodeBase64(obfuscatedBandit.banditKey);
+    final decodedAction = decodeBase64(obfuscatedBandit.action);
+    final decodedModelVersion = decodeBase64(obfuscatedBandit.modelVersion);
+    final decodedActionNumericAttributes =
+        obfuscatedBandit.actionNumericAttributes.map(
+      (key, value) =>
+          MapEntry(key, double.tryParse(decodeBase64(value)) ?? 0.0),
+    );
+    final decodedActionCategoricalAttributes =
+        obfuscatedBandit.actionCategoricalAttributes.map(
+      (key, value) => MapEntry(key, decodeBase64(value)),
+    );
+
+    final assignedVariation = getStringAssignment(flagKey, defaultValue);
+
+    final banditEvent = BanditEvent(
+      timestamp: DateTime.now().toIso8601String(),
+      featureFlag: flagKey,
+      bandit: decodedBanditKey,
+      subject: _precompute.subject.subjectKey,
+      action: decodedAction,
+      actionProbability: obfuscatedBandit.actionProbability,
+      optimalityGap: obfuscatedBandit.optimalityGap,
+      modelVersion: decodedModelVersion,
+      subjectNumericAttributes:
+          _precompute.subject.subjectAttributes.numericAttributes.map(
+        (key, value) => MapEntry(key, value.toDouble()),
+      ),
+      subjectCategoricalAttributes:
+          _precompute.subject.subjectAttributes.categoricalAttributes.map(
+        (key, value) => MapEntry(key, value),
+      ),
+      actionNumericAttributes: decodedActionNumericAttributes,
+      actionCategoricalAttributes: decodedActionCategoricalAttributes,
+      metaData: _buildLoggerMetadata(),
+    );
+
+    try {
+      _logBanditAction(banditEvent);
+    } catch (error) {
+      _logger
+          .severe('$defaultLoggerPrefix Error logging bandit action: $error');
+    }
+
+    return BanditEvaluation(
+        variation: assignedVariation, action: decodedAction);
   }
 
   // Private helper methods
@@ -329,6 +397,12 @@ class EppoPrecomputedClient {
     }
   }
 
+  void _logBanditAction(BanditEvent event) {
+    if (_sdkOptions.banditLogger != null) {
+      _sdkOptions.banditLogger!.logBanditEvent(event);
+    }
+  }
+
   /// Builds metadata for the logger
   Map<String, dynamic> _buildLoggerMetadata() {
     return {
@@ -347,6 +421,18 @@ class EppoPrecomputedClient {
 
     final saltedAndHashedFlagKey = getMD5Hash(flagKey, salt: salt);
     return _precomputedFlagStore.get(saltedAndHashedFlagKey);
+  }
+
+  ObfuscatedPrecomputedBandit? _getPrecomputedBandit(String banditKey) {
+    final salt = _precomputedBanditStore.salt;
+
+    if (salt == null) {
+      _logger.warning('$defaultLoggerPrefix Missing salt for bandit store');
+      return null;
+    }
+
+    final saltedAndHashedBanditKey = getMD5Hash(banditKey, salt: salt);
+    return _precomputedBanditStore.get(saltedAndHashedBanditKey);
   }
 }
 
@@ -433,4 +519,19 @@ class FlagEvaluation {
       'doLog': doLog,
     };
   }
+}
+
+/// Represents the details of an assignment, including variation, action, and evaluation details
+class BanditEvaluation {
+  /// The assigned variation value
+  final String variation;
+
+  /// The action associated with the assignment, if any
+  final String? action;
+
+  /// Creates a new assignment details object
+  const BanditEvaluation({
+    required this.variation,
+    this.action,
+  });
 }
