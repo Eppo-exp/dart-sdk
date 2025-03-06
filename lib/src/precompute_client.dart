@@ -12,6 +12,9 @@ class SdkOptions {
   /// Platform for the SDK
   final sdk.SdkPlatform sdkPlatform;
 
+  /// Assignment logger
+  final AssignmentLogger? assignmentLogger;
+
   /// Base URL for API requests
   final String? baseUrl;
 
@@ -28,6 +31,7 @@ class SdkOptions {
   const SdkOptions({
     required this.sdkKey,
     required this.sdkPlatform,
+    this.assignmentLogger,
     this.baseUrl,
     this.requestTimeoutMs,
     this.throwOnFailedInitialization,
@@ -56,6 +60,10 @@ class EppoPrecomputedClient {
   final ConfigurationStore<ObfuscatedPrecomputedFlag> _precomputedFlagStore;
   EppoApiClient? _apiClient;
   final Logger _logger = Logger('EppoPrecomputedClient');
+
+  // TODO: Add assignment cache
+  /// Cache for tracking logged assignments to prevent duplicates
+  // AssignmentCache? assignmentCache;
 
   /// Creates a new precomputed client
   EppoPrecomputedClient(SdkOptions sdkOptions, PrecomputeArguments precompute)
@@ -205,29 +213,33 @@ class EppoPrecomputedClient {
     final decodedValue = decodeValue(precomputedFlag.variationValue,
         precomputedFlag.variationType.toString().split('.').last);
 
-    final result = {
-      'flagKey': flagKey,
-      'format': _precomputedFlagStore.getFormat() ?? '',
-      'subjectKey': _precompute.subject.subjectKey,
-      'subjectAttributes': _precompute.subject.subjectAttributes,
-      'variation': {
-        'key': precomputedFlag.variationKey != null
+    final result = FlagEvaluation(
+      flagKey: flagKey,
+      format: _precomputedFlagStore.getFormat() ?? '',
+      subjectKey: _precompute.subject.subjectKey,
+      subjectAttributes: _precompute.subject.subjectAttributes,
+      variation: Variation(
+        key: precomputedFlag.variationKey != null
             ? decodeBase64(precomputedFlag.variationKey!)
             : '',
-        'value': decodedValue,
-      },
-      'allocationKey': precomputedFlag.allocationKey != null
+        value: decodedValue,
+      ),
+      allocationKey: precomputedFlag.allocationKey != null
           ? decodeBase64(precomputedFlag.allocationKey!)
           : '',
-      'extraLogging': precomputedFlag.extraLogging != null
+      extraLogging: precomputedFlag.extraLogging != null
           ? decodeStringMap(precomputedFlag.extraLogging!)
           : {},
-      'doLog': precomputedFlag.doLog,
-    };
+      doLog: precomputedFlag.doLog,
+    );
 
     try {
-      final variation = result['variation'] as Map<String, dynamic>?;
-      final variationValue = variation?['value'];
+      final variation = result.variation;
+      final variationValue = variation?.value;
+
+      if (result.doLog) {
+        _logAssignment(result);
+      }
 
       if (variationValue != null) {
         return valueTransformer != null
@@ -241,6 +253,70 @@ class EppoPrecomputedClient {
     }
   }
 
+  void _logAssignment(FlagEvaluation result) {
+    final flagKey = result.flagKey;
+    final subjectKey = result.subjectKey;
+    final allocationKey = result.allocationKey;
+    final subjectAttributes = result.subjectAttributes;
+    final variation = result.variation;
+    final format = result.format;
+
+    // Create the assignment event
+    final event = AssignmentEvent(
+      allocation: allocationKey,
+      experiment: allocationKey != null ? '$flagKey-$allocationKey' : null,
+      featureFlag: flagKey,
+      format: format,
+      variation: variation?.key,
+      subject: subjectKey,
+      timestamp: DateTime.now().toIso8601String(),
+      subjectAttributes: subjectAttributes.toJson(),
+      metaData: _buildLoggerMetadata(),
+      evaluationDetails: null,
+    );
+
+    // TODO: Add assignment cache
+    // Check if we've already logged this assignment
+    // if (variation != null && allocationKey != null) {
+    //   final hasLoggedAssignment = assignmentCache?.has(
+    //     flagKey: flagKey,
+    //     subjectKey: subjectKey,
+    //     allocationKey: allocationKey,
+    //     variationKey: variation.key,
+    //   );
+
+    //   if (hasLoggedAssignment == true) {
+    //     return;
+    //   }
+    // }
+
+    // TODO: Add assignments to queue to flush.
+    try {
+      if (_sdkOptions.assignmentLogger != null) {
+        _sdkOptions.assignmentLogger!.logAssignment(event);
+      }
+
+      // Update the assignment cache
+      // assignmentCache?.set(
+      //   flagKey: flagKey,
+      //   subjectKey: subjectKey,
+      //   allocationKey: allocationKey ?? '__eppo_no_allocation',
+      //   variationKey: variation?.key ?? '__eppo_no_variation',
+      // );
+    } catch (error) {
+      _logger.severe(
+          '$defaultLoggerPrefix Error logging assignment event: $error');
+    }
+  }
+
+  /// Builds metadata for the logger
+  Map<String, dynamic> _buildLoggerMetadata() {
+    return {
+      'sdkVersion': sdk.getSdkVersion(),
+      'sdkName': sdk.SdkPlatform.dart.toString(),
+    };
+  }
+
   ObfuscatedPrecomputedFlag? _getPrecomputedFlag(String flagKey) {
     final salt = _precomputedFlagStore.salt;
 
@@ -250,14 +326,91 @@ class EppoPrecomputedClient {
     }
 
     final saltedAndHashedFlagKey = getMD5Hash(flagKey, salt);
-    final flag = _precomputedFlagStore.get(saltedAndHashedFlagKey);
+    return _precomputedFlagStore.get(saltedAndHashedFlagKey);
+  }
+}
 
-    if (flag == null) {
-      return null;
-    }
+/// Represents a variation in a feature flag
+class Variation {
+  /// The key of the variation
+  final String key;
 
-    // No need to decode here - we'll decode the values when they're accessed
-    // in the _getPrecomputedAssignment method
-    return flag;
+  /// The value of the variation (can be string, number, or boolean)
+  final dynamic value;
+
+  /// Creates a new variation
+  const Variation({
+    required this.key,
+    required this.value,
+  });
+
+  /// Converts this variation to a JSON map
+  Map<String, dynamic> toJson() {
+    return {
+      'key': key,
+      'value': value,
+    };
+  }
+
+  /// Creates a variation from a JSON map
+  factory Variation.fromJson(Map<String, dynamic> json) {
+    return Variation(
+      key: json['key'] as String,
+      value: json['value'],
+    );
+  }
+}
+
+/// Represents the result of a flag evaluation without detailed information
+class FlagEvaluation {
+  /// The key of the flag being evaluated
+  final String flagKey;
+
+  /// The format of the flag evaluation
+  final String format;
+
+  /// The key of the subject being evaluated
+  final String subjectKey;
+
+  /// The attributes of the subject
+  final ContextAttributes subjectAttributes;
+
+  /// The key of the allocation, if any
+  final String? allocationKey;
+
+  /// The variation assigned to the subject
+  final Variation? variation;
+
+  /// Extra logging information
+  final Map<String, String> extraLogging;
+
+  /// Whether to log this evaluation as an assignment event
+  final bool doLog;
+
+  /// Creates a new flag evaluation result
+  const FlagEvaluation({
+    required this.flagKey,
+    required this.format,
+    required this.subjectKey,
+    required this.subjectAttributes,
+    this.allocationKey,
+    this.variation,
+    Map<String, String>? extraLogging,
+    bool? doLog,
+  })  : extraLogging = extraLogging ?? const {},
+        doLog = doLog ?? false;
+
+  /// Converts this evaluation to a JSON map
+  Map<String, dynamic> toJson() {
+    return {
+      'flagKey': flagKey,
+      'format': format,
+      'subjectKey': subjectKey,
+      'subjectAttributes': subjectAttributes.toJson(),
+      if (allocationKey != null) 'allocationKey': allocationKey,
+      if (variation != null) 'variation': variation?.toJson(),
+      'extraLogging': extraLogging,
+      'doLog': doLog,
+    };
   }
 }
