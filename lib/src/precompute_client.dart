@@ -27,8 +27,20 @@ class SdkOptions {
   /// Optional API client for testing
   final EppoApiClient? apiClient;
 
+  /// Assignment cache
+  ///
+  /// By default, an InMemoryAssignmentCache is used to prevent duplicate logging of the same assignment.
+  /// To disable assignment deduplication, use NoOpAssignmentCache:
+  /// ```dart
+  /// SdkOptions(
+  ///   // other options...
+  ///   assignmentCache: NoOpAssignmentCache(),
+  /// )
+  /// ```
+  final AssignmentCache assignmentCache;
+
   /// Creates a new set of precomputed flags request parameters
-  const SdkOptions({
+  SdkOptions({
     required this.sdkKey,
     required this.sdkPlatform,
     this.assignmentLogger,
@@ -36,7 +48,8 @@ class SdkOptions {
     this.requestTimeoutMs,
     this.throwOnFailedInitialization,
     this.apiClient,
-  });
+    AssignmentCache? assignmentCache,
+  }) : assignmentCache = assignmentCache ?? InMemoryAssignmentCache();
 }
 
 /// Options for creating a precomputed client
@@ -60,10 +73,6 @@ class EppoPrecomputedClient {
   final ConfigurationStore<ObfuscatedPrecomputedFlag> _precomputedFlagStore;
   EppoApiClient? _apiClient;
   final Logger _logger = Logger('EppoPrecomputedClient');
-
-  // TODO: Add assignment cache
-  /// Cache for tracking logged assignments to prevent duplicates
-  // AssignmentCache? assignmentCache;
 
   /// Creates a new precomputed client
   EppoPrecomputedClient(SdkOptions sdkOptions, PrecomputeArguments precompute)
@@ -275,20 +284,25 @@ class EppoPrecomputedClient {
       evaluationDetails: null,
     );
 
-    // TODO: Add assignment cache
     // Check if we've already logged this assignment
-    // if (variation != null && allocationKey != null) {
-    //   final hasLoggedAssignment = assignmentCache?.has(
-    //     flagKey: flagKey,
-    //     subjectKey: subjectKey,
-    //     allocationKey: allocationKey,
-    //     variationKey: variation.key,
-    //   );
+    if (variation != null && allocationKey != null) {
+      final hasLoggedAssignment = _sdkOptions.assignmentCache.has(
+        AssignmentCacheEntry(
+          key: AssignmentCacheKey(
+            flagKey: flagKey,
+            subjectKey: subjectKey,
+          ),
+          value: AssignmentCacheValue(
+            allocationKey: allocationKey,
+            variationKey: variation.key,
+          ),
+        ),
+      );
 
-    //   if (hasLoggedAssignment == true) {
-    //     return;
-    //   }
-    // }
+      if (hasLoggedAssignment == true) {
+        return;
+      }
+    }
 
     // TODO: Add assignments to queue to flush.
     try {
@@ -297,12 +311,18 @@ class EppoPrecomputedClient {
       }
 
       // Update the assignment cache
-      // assignmentCache?.set(
-      //   flagKey: flagKey,
-      //   subjectKey: subjectKey,
-      //   allocationKey: allocationKey ?? '__eppo_no_allocation',
-      //   variationKey: variation?.key ?? '__eppo_no_variation',
-      // );
+      _sdkOptions.assignmentCache.set(
+        AssignmentCacheEntry(
+          key: AssignmentCacheKey(
+            flagKey: flagKey,
+            subjectKey: subjectKey,
+          ),
+          value: AssignmentCacheValue(
+            allocationKey: allocationKey ?? '__eppo_no_allocation',
+            variationKey: variation?.key ?? '__eppo_no_variation',
+          ),
+        ),
+      );
     } catch (error) {
       _logger.severe(
           '$defaultLoggerPrefix Error logging assignment event: $error');
@@ -325,7 +345,7 @@ class EppoPrecomputedClient {
       return null;
     }
 
-    final saltedAndHashedFlagKey = getMD5Hash(flagKey, salt);
+    final saltedAndHashedFlagKey = getMD5Hash(flagKey, salt: salt);
     return _precomputedFlagStore.get(saltedAndHashedFlagKey);
   }
 }
