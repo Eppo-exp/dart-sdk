@@ -397,8 +397,8 @@ class FlagEvaluation {
     this.variation,
     Map<String, String>? extraLogging,
     bool? doLog,
-  })  : this.extraLogging = extraLogging ?? const {},
-        this.doLog = doLog ?? false;
+  })  : extraLogging = extraLogging ?? const {},
+        doLog = doLog ?? false;
 
   /// Converts this evaluation to a JSON map
   Map<String, dynamic> toJson() {
