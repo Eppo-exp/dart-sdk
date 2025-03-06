@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 
 /// Generates an MD5 hash of the input string with the given salt
-String getMD5Hash(String input, String salt) {
-  final saltedInput = '$salt$input';
+String getMD5Hash(String input, {String? salt}) {
+  final saltedInput = salt != null ? '$salt$input' : input;
   final bytes = utf8.encode(saltedInput);
   final digest = md5.convert(bytes);
   return digest.toString();

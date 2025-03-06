@@ -44,11 +44,11 @@ void main() {
     const salt = 'test-salt';
 
     // Calculate actual MD5 hashes for our flag keys
-    final stringFlagHash = getMD5Hash('string-flag', salt);
-    final booleanFlagHash = getMD5Hash('boolean-flag', salt);
-    final integerFlagHash = getMD5Hash('integer-flag', salt);
-    final numericFlagHash = getMD5Hash('numeric-flag', salt);
-    final jsonFlagHash = getMD5Hash('json-flag', salt);
+    final stringFlagHash = getMD5Hash('string-flag', salt: salt);
+    final booleanFlagHash = getMD5Hash('boolean-flag', salt: salt);
+    final integerFlagHash = getMD5Hash('integer-flag', salt: salt);
+    final numericFlagHash = getMD5Hash('numeric-flag', salt: salt);
+    final jsonFlagHash = getMD5Hash('json-flag', salt: salt);
 
     setUp(() async {
       // Encode the values in the mock response
@@ -178,7 +178,55 @@ void main() {
     });
 
     group('Assignment Logging', () {
-      test('logs all assignments when doLog is true', () {
+      late EppoPrecomputedClient clientWithoutCache;
+      late EppoPrecomputedClient clientWithCache;
+      late MockAssignmentLogger loggerWithoutCache;
+      late MockAssignmentLogger loggerWithCache;
+      late SdkOptions sdkOptionsWithCache;
+
+      setUp(() async {
+        // Setup client without assignment cache
+        loggerWithoutCache = MockAssignmentLogger();
+        final sdkOptionsWithoutCache = SdkOptions(
+          sdkKey: sdkKey,
+          sdkPlatform: sdk.SdkPlatform.dart,
+          apiClient: apiClient,
+          assignmentLogger: loggerWithoutCache,
+          assignmentCache:
+              NoOpAssignmentCache(), // Use NoOpAssignmentCache to disable deduplication
+        );
+
+        final precomputeArgs = PrecomputeArguments(
+          subject: Subject(
+            subjectKey: subjectKey,
+            subjectAttributes: ContextAttributes(
+              categoricalAttributes: {'country': 'US', 'device': 'mobile'},
+              numericAttributes: {'age': 30},
+            ),
+          ),
+        );
+
+        clientWithoutCache =
+            EppoPrecomputedClient(sdkOptionsWithoutCache, precomputeArgs);
+        await clientWithoutCache.fetchPrecomputedFlags();
+
+        // Setup client with assignment cache
+        loggerWithCache = MockAssignmentLogger();
+        sdkOptionsWithCache = SdkOptions(
+          sdkKey: sdkKey,
+          sdkPlatform: sdk.SdkPlatform.dart,
+          apiClient: apiClient,
+          assignmentLogger: loggerWithCache,
+          // Use explicit cache
+          assignmentCache: InMemoryAssignmentCache(),
+        );
+
+        clientWithCache =
+            EppoPrecomputedClient(sdkOptionsWithCache, precomputeArgs);
+        await clientWithCache.fetchPrecomputedFlags();
+      });
+
+      test('logs canonical assignments when doLog is true', () {
         // Clear any previous events
         mockLogger.clear();
 
@@ -187,7 +235,7 @@ void main() {
         client.getStringAssignment('string-flag', 'default');
 
         // Verify that an event was logged
-        expect(mockLogger.loggedEvents, hasLength(2));
+        expect(mockLogger.loggedEvents, hasLength(1));
 
         // Verify the logged event details
         final event = mockLogger.loggedEvents.first;
@@ -212,6 +260,145 @@ void main() {
         // Verify the logged event details
         expect(mockLogger.loggedEvents[0].featureFlag, equals('string-flag'));
         expect(mockLogger.loggedEvents[1].featureFlag, equals('boolean-flag'));
+      });
+
+      test('logs duplicate assignments without deduplication', () {
+        // Clear any previous events
+        loggerWithoutCache.clear();
+
+        // Get the same flag value twice
+        clientWithoutCache.getStringAssignment('string-flag', 'default');
+        clientWithoutCache.getStringAssignment('string-flag', 'default');
+
+        // Should log both assignments since we're using NoOpAssignmentCache
+        expect(loggerWithoutCache.loggedEvents, hasLength(2));
+      });
+
+      test('does not log duplicate assignments with cache', () {
+        // Clear any previous events
+        loggerWithCache.clear();
+
+        // Get the same flag value twice
+        clientWithCache.getStringAssignment('string-flag', 'default');
+        clientWithCache.getStringAssignment('string-flag', 'default');
+
+        // Should only log once due to cache
+        expect(loggerWithCache.loggedEvents, hasLength(1));
+      });
+
+      test('logs for each unique flag with cache', () {
+        // Clear any previous events
+        loggerWithCache.clear();
+
+        // Get different flag values
+        clientWithCache.getStringAssignment('string-flag', 'default');
+        clientWithCache.getStringAssignment(
+            'string-flag', 'default'); // Cache hit
+        clientWithCache.getBooleanAssignment('boolean-flag', false);
+        clientWithCache.getBooleanAssignment(
+            'boolean-flag', false); // Cache hit
+        clientWithCache.getIntegerAssignment('integer-flag', 0);
+        clientWithCache.getIntegerAssignment('integer-flag', 0); // Cache hit
+
+        // Should log once for each unique flag
+        expect(loggerWithCache.loggedEvents, hasLength(3));
+      });
+
+      test('NoOpAssignmentCache always returns false for has()', () {
+        final cache = NoOpAssignmentCache();
+        final entry = AssignmentCacheEntry(
+          key: AssignmentCacheKey(
+            flagKey: 'test-flag',
+            subjectKey: 'test-subject',
+          ),
+          value: AssignmentCacheValue(
+            allocationKey: 'test-allocation',
+            variationKey: 'test-variation',
+          ),
+        );
+
+        // Set the entry
+        cache.set(entry);
+
+        // Should still return false even after setting
+        expect(cache.has(entry), isFalse);
+      });
+
+      test('InMemoryAssignmentCache returns true for has() after set()', () {
+        final cache = InMemoryAssignmentCache();
+        final entry = AssignmentCacheEntry(
+          key: AssignmentCacheKey(
+            flagKey: 'test-flag',
+            subjectKey: 'test-subject',
+          ),
+          value: AssignmentCacheValue(
+            allocationKey: 'test-allocation',
+            variationKey: 'test-variation',
+          ),
+        );
+
+        // Initially should return false
+        expect(cache.has(entry), isFalse);
+
+        // Set the entry
+        cache.set(entry);
+
+        // Now should return true
+        expect(cache.has(entry), isTrue);
+
+        // Different value should return false
+        final differentEntry = AssignmentCacheEntry(
+          key: AssignmentCacheKey(
+            flagKey: 'test-flag',
+            subjectKey: 'test-subject',
+          ),
+          value: AssignmentCacheValue(
+            allocationKey: 'different-allocation',
+            variationKey: 'test-variation',
+          ),
+        );
+        expect(cache.has(differentEntry), isFalse);
+      });
+
+      test('logs assignments when flag values change', () {
+        // Clear any previous events
+        loggerWithCache.clear();
+
+        // Get the initial assignment
+        final initialValue =
+            clientWithCache.getStringAssignment('string-flag', 'default');
+        expect(initialValue, equals('test-string-value'));
+
+        // Verify initial log was made
+        expect(loggerWithCache.loggedEvents, hasLength(1));
+        expect(
+            loggerWithCache.loggedEvents[0].featureFlag, equals('string-flag'));
+        expect(
+            loggerWithCache.loggedEvents[0].variation, equals('variation-1'));
+
+        // Create a new AssignmentCacheEntry with the same key but different value
+        final cacheKey = AssignmentCacheKey(
+          flagKey: 'string-flag',
+          subjectKey: subjectKey,
+        );
+
+        // Create a new cache entry with the same key but different value
+        final newCacheEntry = AssignmentCacheEntry(
+          key: cacheKey,
+          value: AssignmentCacheValue(
+            allocationKey: 'allocation-1',
+            variationKey: 'variation-changed',
+          ),
+        );
+
+        // Set the new cache entry
+        sdkOptionsWithCache.assignmentCache.set(newCacheEntry);
+
+        // Get the assignment again - this should log again because the cache value changed
+        clientWithCache.getStringAssignment('string-flag', 'default');
+
+        // Verify another log was made
+        expect(loggerWithCache.loggedEvents, hasLength(2));
       });
     });
   });
