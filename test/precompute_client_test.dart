@@ -214,7 +214,7 @@ void main() {
           sdkPlatform: sdk.SdkPlatform.dart,
           apiClient: apiClient,
           assignmentLogger: loggerWithoutCache,
-          assignmentCache:
+          flagAssignmentCache:
               NoOpAssignmentCache(), // Use NoOpAssignmentCache to disable deduplication
         );
 
@@ -240,7 +240,7 @@ void main() {
           apiClient: apiClient,
           assignmentLogger: loggerWithCache,
           // Use explicit cache
-          assignmentCache: InMemoryAssignmentCache(),
+          flagAssignmentCache: InMemoryAssignmentCache(),
         );
 
         clientWithCache =
@@ -414,7 +414,7 @@ void main() {
         );
 
         // Set the new cache entry
-        sdkOptionsWithCache.assignmentCache.set(newCacheEntry);
+        sdkOptionsWithCache.flagAssignmentCache.set(newCacheEntry);
 
         // Get the assignment again - this should log again because the cache value changed
         clientWithCache.getStringAssignment('string-flag', 'default');
