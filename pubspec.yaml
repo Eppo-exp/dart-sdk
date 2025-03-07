@@ -1,6 +1,7 @@
 name: eppo
 description: Eppo SDK for Dart and Flutter applications
 version: 1.0.0
+homepage: https://geteppo.com
 repository: https://github.com/eppo/eppo-dart
 
 environment:
