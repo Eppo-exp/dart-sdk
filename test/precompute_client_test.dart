@@ -333,7 +333,7 @@ void main() {
             flagKey: 'test-flag',
             subjectKey: 'test-subject',
           ),
-          value: AssignmentCacheValue(
+          value: VariationCacheValue(
             allocationKey: 'test-allocation',
             variationKey: 'test-variation',
           ),
@@ -353,7 +353,7 @@ void main() {
             flagKey: 'test-flag',
             subjectKey: 'test-subject',
           ),
-          value: AssignmentCacheValue(
+          value: VariationCacheValue(
             allocationKey: 'test-allocation',
             variationKey: 'test-variation',
           ),
@@ -374,7 +374,7 @@ void main() {
             flagKey: 'test-flag',
             subjectKey: 'test-subject',
           ),
-          value: AssignmentCacheValue(
+          value: VariationCacheValue(
             allocationKey: 'different-allocation',
             variationKey: 'test-variation',
           ),
@@ -407,7 +407,7 @@ void main() {
         // Create a new cache entry with the same key but different value
         final newCacheEntry = AssignmentCacheEntry(
           key: cacheKey,
-          value: AssignmentCacheValue(
+          value: VariationCacheValue(
             allocationKey: 'allocation-1',
             variationKey: 'variation-changed',
           ),

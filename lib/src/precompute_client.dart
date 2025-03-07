@@ -42,6 +42,9 @@ class SdkOptions {
   /// ```
   final AssignmentCache assignmentCache;
 
+  /// Assignment cache for bandit actions
+  final AssignmentCache banditActionCache;
+
   /// Creates a new set of precomputed flags request parameters
   SdkOptions({
     required this.sdkKey,
@@ -53,7 +56,9 @@ class SdkOptions {
     this.throwOnFailedInitialization,
     this.apiClient,
     AssignmentCache? assignmentCache,
-  }) : assignmentCache = assignmentCache ?? InMemoryAssignmentCache();
+    AssignmentCache? banditActionCache,
+  })  : assignmentCache = assignmentCache ?? InMemoryAssignmentCache(),
+        banditActionCache = banditActionCache ?? InMemoryAssignmentCache();
 }
 
 /// Options for creating a precomputed client
@@ -360,7 +365,7 @@ class EppoPrecomputedClient {
             flagKey: flagKey,
             subjectKey: subjectKey,
           ),
-          value: AssignmentCacheValue(
+          value: VariationCacheValue(
             allocationKey: allocationKey,
             variationKey: variation.key,
           ),
@@ -385,7 +390,7 @@ class EppoPrecomputedClient {
             flagKey: flagKey,
             subjectKey: subjectKey,
           ),
-          value: AssignmentCacheValue(
+          value: VariationCacheValue(
             allocationKey: allocationKey ?? '__eppo_no_allocation',
             variationKey: variation?.key ?? '__eppo_no_variation',
           ),
