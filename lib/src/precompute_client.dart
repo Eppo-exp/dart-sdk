@@ -1,8 +1,16 @@
 import 'dart:convert';
 
-import 'package:eppo/eppo_sdk.dart';
-import 'package:eppo/src/sdk_version.dart' as sdk;
 import 'package:logging/logging.dart';
+import 'bandit_logger.dart';
+import 'assignment_logger.dart';
+import 'assignment_cache.dart';
+import 'configuration_store.dart';
+import 'crypto.dart';
+import 'sdk_version.dart';
+import 'subject.dart';
+import 'configuration_wire_protocol.dart';
+import 'constants.dart';
+import 'api_client.dart';
 
 // Parameters for precomputed flags requests
 class SdkOptions {
@@ -10,7 +18,7 @@ class SdkOptions {
   final String sdkKey;
 
   /// Platform for the SDK
-  final sdk.SdkPlatform sdkPlatform;
+  final SdkPlatform sdkPlatform;
 
   /// Assignment logger
   final AssignmentLogger? assignmentLogger;
@@ -102,7 +110,7 @@ class EppoPrecomputedClient {
     // Only create a new API client if one wasn't provided in the options
     _apiClient ??= EppoApiClient(
       sdkKey: _sdkOptions.sdkKey,
-      sdkVersion: sdk.getSdkVersion(),
+      sdkVersion: getSdkVersion(),
       sdkPlatform: _sdkOptions.sdkPlatform,
       baseUrl: _sdkOptions.baseUrl,
       requestTimeoutMs: _sdkOptions.requestTimeoutMs,
@@ -456,8 +464,8 @@ class EppoPrecomputedClient {
   /// Builds metadata for the logger
   Map<String, dynamic> _buildLoggerMetadata() {
     return {
-      'sdkVersion': sdk.getSdkVersion(),
-      'sdkName': sdk.SdkPlatform.dart.toString(),
+      'sdkVersion': getSdkVersion(),
+      'sdkName': SdkPlatform.dart.toString(),
     };
   }
 

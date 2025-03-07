@@ -1,4 +1,4 @@
-import 'package:eppo/src/crypto.dart';
+import 'crypto.dart';
 
 /// Assignment cache keys are only on the subject and flag level, while the entire value is used
 /// for uniqueness checking. This way if an assigned variation or bandit action changes for a

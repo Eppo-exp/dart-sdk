@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:eppo/eppo_sdk.dart';
+import 'package:eppo/eppo.dart';
 import 'package:eppo/src/sdk_version.dart' as sdk;
 import 'package:logging/logging.dart';
 

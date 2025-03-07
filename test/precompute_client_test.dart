@@ -1,6 +1,7 @@
-import 'package:eppo/eppo_sdk.dart';
+import 'package:eppo/eppo.dart';
 import 'package:eppo/src/sdk_version.dart' as sdk;
 import 'package:test/test.dart';
+import 'package:eppo/src/crypto.dart';
 
 class MockEppoHttpClient implements EppoHttpClient {
   final Map<String, dynamic> responseData;
