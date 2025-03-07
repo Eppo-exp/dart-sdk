@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:eppo/eppo.dart';
-import 'package:eppo/src/sdk_version.dart' as sdk;
 import 'package:logging/logging.dart';
 
 /// This example demonstrates how to use the EppoPrecomputedClient to fetch and evaluate
@@ -46,7 +45,7 @@ void main(List<String> args) async {
   // Create SDK options
   final sdkOptions = SdkOptions(
     sdkKey: sdkKey,
-    sdkPlatform: sdk.SdkPlatform.dart,
+    sdkPlatform: SdkPlatform.dart,
     throwOnFailedInitialization: false, // Don't throw on initialization failure
   );
 
@@ -54,10 +53,8 @@ void main(List<String> args) async {
   final precomputeArgs = PrecomputeArguments(subject: subject);
 
   // Create client
-  final client = EppoPrecomputedClient(sdkOptions, precomputeArgs);
-
-  // Fetch precomputed flags
-  await client.fetchPrecomputedFlags();
+  // fetch precomputed flags
+  await Eppo.initialize(precomputeArgs, sdkOptions);
 
   // Print some example assignments
   print('\nExample flag assignments:');
@@ -65,25 +62,24 @@ void main(List<String> args) async {
 
   // Get precomputed assignments
   final stringValue =
-      client.getStringAssignment('dart-test-flag-string', 'default-string');
+      Eppo.getStringAssignment('dart-test-flag-string', 'default-string');
   print('string-flag: $stringValue');
 
-  final boolValue =
-      client.getBooleanAssignment('dart-test-flag-boolean', false);
+  final boolValue = Eppo.getBooleanAssignment('dart-test-flag-boolean', false);
   print('boolean-flag: $boolValue');
 
-  final intValue = client.getIntegerAssignment('dart-test-flag-integer', 0);
+  final intValue = Eppo.getIntegerAssignment('dart-test-flag-integer', 0);
   print('integer-flag: $intValue');
 
-  final numValue = client.getNumericAssignment('dart-test-flag-numeric', 0.0);
+  final numValue = Eppo.getNumericAssignment('dart-test-flag-numeric', 0.0);
   print('numeric-flag: $numValue');
 
-  final jsonValue = client.getJSONAssignment('dart-test-flag-json', {});
+  final jsonValue = Eppo.getJSONAssignment('dart-test-flag-json', {});
   print('json-flag: $jsonValue');
 
   // Get precomputed bandit assignments
   final banditValue =
-      client.getBanditAction('update-highlights-bandit', 'default-bandit');
+      Eppo.getBanditAction('update-highlights-bandit', 'default-bandit');
   print(
       'bandit-flag: action=${banditValue.action} variation=${banditValue.variation}');
 
