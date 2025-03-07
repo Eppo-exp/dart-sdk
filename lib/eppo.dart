@@ -1,33 +1,11 @@
-export 'src/configuration_wire_protocol.dart' show FormatEnum, VariationType;
-export 'src/subject.dart' show Subject, ContextAttributes;
-export 'src/constants.dart' show defaultLoggerPrefix;
-export 'src/precompute_client.dart'
-    show
-        EppoPrecomputedClient,
-        SdkOptions,
-        PrecomputeArguments,
-        FlagEvaluation,
-        Variation,
-        BanditEvaluation;
-export 'src/api_client.dart' show EppoApiClient;
-export 'src/http_client.dart' show EppoHttpClient;
-export 'src/sdk_version.dart' show SdkPlatform;
-export 'src/configuration_store.dart' show ConfigurationStore;
-export 'src/crypto.dart' show getMD5Hash;
-export 'src/assignment_logger.dart' show AssignmentLogger, AssignmentEvent;
-export 'src/assignment_cache.dart'
-    show
-        AssignmentCache,
-        AssignmentCacheKey,
-        CacheValue,
-        VariationCacheValue,
-        BanditCacheValue,
-        AssignmentCacheEntry,
-        InMemoryAssignmentCache,
-        NoOpAssignmentCache;
-export 'src/bandit_logger.dart' show BanditLogger, BanditEvent;
-
 import 'src/precompute_client.dart';
+
+export 'src/assignment_logger.dart' show AssignmentLogger, AssignmentEvent;
+export 'src/bandit_logger.dart' show BanditLogger, BanditEvent;
+export 'src/precompute_client.dart'
+    show SdkOptions, PrecomputeArguments, BanditEvaluation;
+export 'src/subject.dart' show Subject, ContextAttributes;
+export 'src/sdk_version.dart' show SdkPlatform;
 
 /// The main interface to interact with the Eppo SDK
 class Eppo {

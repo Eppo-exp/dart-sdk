@@ -14,6 +14,9 @@ enum SdkPlatform {
 
   /// Flutter Android platform
   flutterAndroid,
+
+  /// Unknown platform
+  unknown,
 }
 
 /// Returns the SDK version
@@ -35,5 +38,7 @@ String getSdkName(SdkPlatform platform) {
       return '$_sdkNamePrefix-flutter-client-ios';
     case SdkPlatform.flutterAndroid:
       return '$_sdkNamePrefix-flutter-client-android';
+    case SdkPlatform.unknown:
+      return '$_sdkNamePrefix-unknown';
   }
 }

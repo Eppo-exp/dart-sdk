@@ -2,6 +2,15 @@ import 'dart:io';
 import 'package:eppo/eppo.dart';
 import 'package:logging/logging.dart';
 
+class MyAssignmentLogger extends AssignmentLogger {
+  @override
+  void logAssignment(AssignmentEvent event) {
+    print('--------------------------------');
+    print('Assignment event: ${event.toJson()}');
+    print('--------------------------------');
+  }
+}
+
 /// This example demonstrates how to use the EppoPrecomputedClient to fetch and evaluate
 /// feature flags for a given subject.
 ///
@@ -46,7 +55,7 @@ void main(List<String> args) async {
   final sdkOptions = SdkOptions(
     sdkKey: sdkKey,
     sdkPlatform: SdkPlatform.dart,
-    throwOnFailedInitialization: false, // Don't throw on initialization failure
+    assignmentLogger: MyAssignmentLogger(),
   );
 
   // Create precompute arguments
