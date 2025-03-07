@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:eppo/eppo_sdk.dart';
+import 'package:eppo/eppo.dart';
 import 'package:test/test.dart';
 
 void main() {

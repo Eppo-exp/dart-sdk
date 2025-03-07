@@ -1,5 +1,8 @@
-import 'package:eppo/eppo_sdk.dart';
-import 'package:eppo/src/sdk_version.dart' as sdk;
+import 'sdk_version.dart';
+import 'constants.dart';
+import 'http_client.dart';
+import 'configuration_wire_protocol.dart';
+import 'subject.dart';
 
 /// API client for Eppo services
 class EppoApiClient {
@@ -12,7 +15,7 @@ class EppoApiClient {
   final String sdkVersion;
 
   /// SDK name
-  final sdk.SdkPlatform sdkPlatform;
+  final SdkPlatform sdkPlatform;
 
   /// Base URL for API requests
   final String baseUrl;
