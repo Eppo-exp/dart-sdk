@@ -63,7 +63,7 @@ void main(List<String> args) async {
   print('\nExample flag assignments:');
   print('-------------------------');
 
-  // Try to get some common flag types
+  // Get precomputed assignments
   final stringValue =
       client.getStringAssignment('dart-test-flag-string', 'default-string');
   print('string-flag: $stringValue');
@@ -80,6 +80,12 @@ void main(List<String> args) async {
 
   final jsonValue = client.getJSONAssignment('dart-test-flag-json', {});
   print('json-flag: $jsonValue');
+
+  // Get precomputed bandit assignments
+  final banditValue =
+      client.getBanditAction('update-highlights-bandit', 'default-bandit');
+  print(
+      'bandit-flag: action=${banditValue.action} variation=${banditValue.variation}');
 
   exit(0);
 }

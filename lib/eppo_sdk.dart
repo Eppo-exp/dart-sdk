@@ -15,3 +15,4 @@ export 'src/configuration_store.dart';
 export 'src/crypto.dart';
 export 'src/assignment_logger.dart';
 export 'src/assignment_cache.dart';
+export 'src/bandit_logger.dart';

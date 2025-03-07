@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:eppo/src/crypto.dart';
 import 'package:test/test.dart';
 import 'package:eppo/src/configuration_wire_protocol.dart';
 
@@ -97,12 +98,120 @@ void main() {
       );
     });
 
-    test('should handle empty bandits correctly', () {
+    test('should parse bandits correctly', () {
       final config = ObfuscatedPrecomputedConfigurationResponse.fromJson(
         response,
       );
 
-      // Verify bandits is empty
+      // Verify the bandits
+      expect(config.bandits.length, equals(2));
+
+      // Check the first bandit
+      final stringFlagBandit = config.bandits[
+          '41a27b85ebdd7b1a5ae367a1a240a214']; // hash for 'string-flag'
+      expect(stringFlagBandit, isNotNull);
+      expect(
+          stringFlagBandit!.banditKey,
+          equals(
+              'cmVjb21tZW5kYXRpb24tbW9kZWwtdjE=')); // 'recommendation-model-v1' encoded
+      expect(stringFlagBandit.action,
+          equals('c2hvd19yZWRfYnV0dG9u')); // 'show_red_button' encoded
+      expect(stringFlagBandit.actionProbability, equals(0.85));
+      expect(stringFlagBandit.optimalityGap, equals(0.12));
+      expect(stringFlagBandit.modelVersion,
+          equals('djIuMy4x')); // 'v2.3.1' encoded
+
+      // Check numeric attributes
+      expect(stringFlagBandit.actionNumericAttributes, isNotNull);
+      expect(stringFlagBandit.actionNumericAttributes.length, equals(2));
+      expect(
+        stringFlagBandit.actionNumericAttributes[
+            'ZXhwZWN0ZWRDb252ZXJzaW9u'], // 'expectedConversion' encoded
+        equals('MC4yMw=='), // '0.23' encoded
+      );
+      expect(
+        stringFlagBandit.actionNumericAttributes[
+            'ZXhwZWN0ZWRSZXZlbnVl'], // 'expectedRevenue' encoded
+        equals('MTUuNzU='), // '15.75' encoded
+      );
+
+      // Check categorical attributes
+      expect(stringFlagBandit.actionCategoricalAttributes, isNotNull);
+      expect(stringFlagBandit.actionCategoricalAttributes.length, equals(2));
+      expect(
+        stringFlagBandit
+            .actionCategoricalAttributes['Y2F0ZWdvcnk='], // 'category' encoded
+        equals('cHJvbW90aW9u'), // 'promotion' encoded
+      );
+      expect(
+        stringFlagBandit
+            .actionCategoricalAttributes['cGxhY2VtZW50'], // 'placement' encoded
+        equals('aG9tZV9zY3JlZW4='), // 'home_screen' encoded
+      );
+
+      // Check the second bandit
+      final extraLoggingFlagBandit = config.bandits[
+          '35f919d963a541a0bd28f349f84050fb']; // hash for 'string-flag-with-extra-logging'
+      expect(extraLoggingFlagBandit, isNotNull);
+      expect(
+          extraLoggingFlagBandit!.banditKey,
+          equals(
+              'Y29udGVudC1yZWNvbW1lbmRhdGlvbg==')); // 'content-recommendation' encoded
+      expect(extraLoggingFlagBandit.action,
+          equals('ZmVhdHVyZWRfY29udGVudA==')); // 'featured_content' encoded
+      expect(extraLoggingFlagBandit.actionProbability, equals(0.72));
+      expect(extraLoggingFlagBandit.optimalityGap, equals(0.08));
+      expect(extraLoggingFlagBandit.modelVersion,
+          equals('djEuNS4w')); // 'v1.5.0' encoded
+    });
+
+    test('should decode bandit values correctly', () {
+      final config = ObfuscatedPrecomputedConfigurationResponse.fromJson(
+        response,
+      );
+
+      final stringFlagBandit = config.bandits[
+          '41a27b85ebdd7b1a5ae367a1a240a214']!; // hash for 'string-flag'
+
+      // Test decoding of string values
+      expect(decodeBase64(stringFlagBandit.banditKey),
+          equals('recommendation-model-v1'));
+      expect(decodeBase64(stringFlagBandit.action), equals('show_red_button'));
+      expect(decodeBase64(stringFlagBandit.modelVersion), equals('v2.3.1'));
+
+      // Test decoding of numeric attributes
+      final decodedNumericAttrs = stringFlagBandit.actionNumericAttributes.map(
+        (key, value) => MapEntry(
+          decodeBase64(key),
+          double.parse(decodeBase64(value)),
+        ),
+      );
+      expect(decodedNumericAttrs['expectedConversion'], equals(0.23));
+      expect(decodedNumericAttrs['expectedRevenue'], equals(15.75));
+
+      // Test decoding of categorical attributes
+      final decodedCategoricalAttrs =
+          stringFlagBandit.actionCategoricalAttributes.map(
+        (key, value) => MapEntry(
+          decodeBase64(key),
+          decodeBase64(value),
+        ),
+      );
+      expect(decodedCategoricalAttrs['category'], equals('promotion'));
+      expect(decodedCategoricalAttrs['placement'], equals('home_screen'));
+    });
+
+    test('should handle missing bandits gracefully', () {
+      // Create a response without bandits
+      final responseWithoutBandits = Map<String, dynamic>.from(response);
+      responseWithoutBandits.remove('bandits');
+
+      final config = ObfuscatedPrecomputedConfigurationResponse.fromJson(
+        responseWithoutBandits,
+      );
+
+      // Verify bandits is empty but not null
+      expect(config.bandits, isNotNull);
       expect(config.bandits, isEmpty);
     });
   });

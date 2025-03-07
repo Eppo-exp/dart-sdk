@@ -92,7 +92,23 @@ void main() {
                 encodeBase64('{"key":"value","nested":{"num":123}}'),
           },
         },
-        'bandits': {},
+        'bandits': {
+          stringFlagHash: {
+            "banditKey": encodeBase64("recommendation-model-v1"),
+            "action": encodeBase64("show_red_button"),
+            "actionProbability": 0.85,
+            "optimalityGap": 0.12,
+            "modelVersion": encodeBase64("v2.3.1"),
+            "actionNumericAttributes": {
+              "expectedConversion": encodeBase64("0.23"),
+              "expectedRevenue": encodeBase64("15.75")
+            },
+            "actionCategoricalAttributes": {
+              "category": encodeBase64("promotion"),
+              "placement": encodeBase64("home_screen")
+            }
+          },
+        },
         'salt': salt,
         'format': 'precomputed',
         'obfuscated': true,
@@ -164,6 +180,12 @@ void main() {
         'key': 'value',
         'nested': {'num': 123}
       });
+    });
+
+    test('getBanditAction returns correct value', () {
+      final result = client.getBanditAction('string-flag', 'default-bandit');
+      expect(result.action, 'show_red_button');
+      expect(result.variation, 'test-string-value');
     });
 
     test('returns default value for non-existent flag', () {
