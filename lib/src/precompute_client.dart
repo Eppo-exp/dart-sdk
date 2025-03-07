@@ -18,7 +18,7 @@ class SdkOptions {
   final String sdkKey;
 
   /// Platform for the SDK
-  final SdkPlatform sdkPlatform;
+  final SdkPlatform? sdkPlatform;
 
   /// Assignment logger
   final AssignmentLogger? assignmentLogger;
@@ -111,7 +111,7 @@ class EppoPrecomputedClient {
     _apiClient ??= EppoApiClient(
       sdkKey: _sdkOptions.sdkKey,
       sdkVersion: getSdkVersion(),
-      sdkPlatform: _sdkOptions.sdkPlatform,
+      sdkPlatform: _sdkOptions.sdkPlatform ?? SdkPlatform.unknown,
       baseUrl: _sdkOptions.baseUrl,
       requestTimeoutMs: _sdkOptions.requestTimeoutMs,
     );

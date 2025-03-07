@@ -45,7 +45,7 @@ class EppoApiClient {
     final queryParams = {
       'apiKey': sdkKey,
       'sdkVersion': sdkVersion,
-      'sdkName': sdkPlatform.toString(),
+      'sdkName': getSdkName(sdkPlatform),
     };
 
     final queryString = queryParams.entries

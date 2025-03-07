@@ -24,14 +24,19 @@ void main() {
         getSdkName(SdkPlatform.flutterAndroid),
         'eppo-dart-flutter-client-android',
       );
+      expect(
+        getSdkName(SdkPlatform.unknown),
+        'eppo-dart-unknown',
+      );
     });
 
     test('SdkPlatform enum has expected values', () {
-      expect(SdkPlatform.values.length, 4);
+      expect(SdkPlatform.values.length, 5);
       expect(SdkPlatform.values, contains(SdkPlatform.dart));
       expect(SdkPlatform.values, contains(SdkPlatform.flutterWeb));
       expect(SdkPlatform.values, contains(SdkPlatform.flutterIos));
       expect(SdkPlatform.values, contains(SdkPlatform.flutterAndroid));
+      expect(SdkPlatform.values, contains(SdkPlatform.unknown));
     });
   });
 }

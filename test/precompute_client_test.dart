@@ -1,7 +1,12 @@
-import 'package:eppo/eppo.dart';
-import 'package:eppo/src/sdk_version.dart' as sdk;
+import 'package:eppo/src/sdk_version.dart';
 import 'package:test/test.dart';
 import 'package:eppo/src/crypto.dart';
+import 'package:eppo/src/http_client.dart';
+import 'package:eppo/src/assignment_logger.dart';
+import 'package:eppo/src/assignment_cache.dart';
+import 'package:eppo/src/precompute_client.dart';
+import 'package:eppo/src/subject.dart';
+import 'package:eppo/src/api_client.dart';
 
 class MockEppoHttpClient implements EppoHttpClient {
   final Map<String, dynamic> responseData;
@@ -123,7 +128,7 @@ void main() {
       apiClient = EppoApiClient(
         sdkKey: sdkKey,
         sdkVersion: '1.0.0',
-        sdkPlatform: sdk.SdkPlatform.dart,
+        sdkPlatform: SdkPlatform.dart,
         httpClient: mockHttpClient,
       );
 
@@ -140,7 +145,7 @@ void main() {
       mockLogger = MockAssignmentLogger();
       final sdkOptions = SdkOptions(
         sdkKey: sdkKey,
-        sdkPlatform: sdk.SdkPlatform.dart,
+        sdkPlatform: SdkPlatform.dart,
         apiClient: apiClient,
         assignmentLogger: mockLogger,
       );
@@ -212,7 +217,7 @@ void main() {
         loggerWithoutCache = MockAssignmentLogger();
         final sdkOptionsWithoutCache = SdkOptions(
           sdkKey: sdkKey,
-          sdkPlatform: sdk.SdkPlatform.dart,
+          sdkPlatform: SdkPlatform.dart,
           apiClient: apiClient,
           assignmentLogger: loggerWithoutCache,
           flagAssignmentCache:
@@ -237,7 +242,7 @@ void main() {
         loggerWithCache = MockAssignmentLogger();
         sdkOptionsWithCache = SdkOptions(
           sdkKey: sdkKey,
-          sdkPlatform: sdk.SdkPlatform.dart,
+          sdkPlatform: SdkPlatform.dart,
           apiClient: apiClient,
           assignmentLogger: loggerWithCache,
           // Use explicit cache

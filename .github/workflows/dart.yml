@@ -36,4 +36,4 @@ jobs:
       - name: Run tests
         run: dart test
       - name: Run example
-        run: dart example/precompute_client.dart ${{ secrets.SDK_KEY }} github-subject
+        run: dart example/example_precompute_client.dart ${{ secrets.SDK_KEY }} github-subject

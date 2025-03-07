@@ -1,7 +1,10 @@
 import 'dart:async';
-import 'package:eppo/eppo.dart';
 import 'package:eppo/src/http_client.dart';
-import 'package:eppo/src/sdk_version.dart' as sdk;
+import 'package:eppo/src/sdk_version.dart';
+import 'package:eppo/src/api_client.dart';
+import 'package:eppo/src/subject.dart';
+import 'package:eppo/src/configuration_wire_protocol.dart';
+
 import 'package:test/test.dart';
 
 class MockEppoHttpClient implements EppoHttpClient {
@@ -63,7 +66,7 @@ void main() {
       apiClient = EppoApiClient(
         sdkKey: sdkKey,
         sdkVersion: sdkVersion,
-        sdkPlatform: sdk.SdkPlatform.dart,
+        sdkPlatform: SdkPlatform.dart,
         baseUrl: baseUrl,
         requestTimeoutMs: requestTimeoutMs,
         httpClient: mockHttpClient,
@@ -106,7 +109,7 @@ void main() {
         apiClient = EppoApiClient(
           sdkKey: sdkKey,
           sdkVersion: sdkVersion,
-          sdkPlatform: sdk.SdkPlatform.dart,
+          sdkPlatform: SdkPlatform.dart,
           baseUrl: baseUrl,
           requestTimeoutMs: requestTimeoutMs,
           httpClient: mockHttpClient,
@@ -140,7 +143,7 @@ void main() {
           apiClient = EppoApiClient(
             sdkKey: sdkKey,
             sdkVersion: sdkVersion,
-            sdkPlatform: sdk.SdkPlatform.dart,
+            sdkPlatform: SdkPlatform.dart,
             baseUrl: baseUrl,
             requestTimeoutMs: requestTimeoutMs,
             httpClient: mockHttpClient,
@@ -165,7 +168,7 @@ void main() {
         apiClient = EppoApiClient(
           sdkKey: sdkKey,
           sdkVersion: sdkVersion,
-          sdkPlatform: sdk.SdkPlatform.dart,
+          sdkPlatform: SdkPlatform.dart,
           baseUrl: baseUrl,
           requestTimeoutMs: requestTimeoutMs,
           httpClient: mockHttpClient,
@@ -189,7 +192,7 @@ void main() {
         apiClient = EppoApiClient(
           sdkKey: sdkKey,
           sdkVersion: sdkVersion,
-          sdkPlatform: sdk.SdkPlatform.dart,
+          sdkPlatform: SdkPlatform.dart,
           baseUrl: baseUrl,
           requestTimeoutMs: requestTimeoutMs,
           httpClient: mockHttpClient,
@@ -211,7 +214,7 @@ void main() {
         apiClient = EppoApiClient(
           sdkKey: 'invalid-key',
           sdkVersion: sdkVersion,
-          sdkPlatform: sdk.SdkPlatform.dart,
+          sdkPlatform: SdkPlatform.dart,
           baseUrl: baseUrl,
           requestTimeoutMs: requestTimeoutMs,
           httpClient: mockHttpClient,
@@ -239,7 +242,7 @@ void main() {
         apiClient = EppoApiClient(
           sdkKey: sdkKey,
           sdkVersion: sdkVersion,
-          sdkPlatform: sdk.SdkPlatform.dart,
+          sdkPlatform: SdkPlatform.dart,
           baseUrl: 'https://invalid-url.com',
           requestTimeoutMs: requestTimeoutMs,
           httpClient: mockHttpClient,
@@ -269,7 +272,7 @@ void main() {
         apiClient = EppoApiClient(
           sdkKey: sdkKey,
           sdkVersion: sdkVersion,
-          sdkPlatform: sdk.SdkPlatform.dart,
+          sdkPlatform: SdkPlatform.dart,
           baseUrl: baseUrl,
           requestTimeoutMs: requestTimeoutMs,
           httpClient: mockHttpClient,
