@@ -123,29 +123,29 @@ void main() {
 
       // Check numeric attributes
       expect(stringFlagBandit.actionNumericAttributes, isNotNull);
-      expect(stringFlagBandit.actionNumericAttributes!.length, equals(2));
+      expect(stringFlagBandit.actionNumericAttributes.length, equals(2));
       expect(
-        stringFlagBandit.actionNumericAttributes![
+        stringFlagBandit.actionNumericAttributes[
             'ZXhwZWN0ZWRDb252ZXJzaW9u'], // 'expectedConversion' encoded
         equals('MC4yMw=='), // '0.23' encoded
       );
       expect(
-        stringFlagBandit.actionNumericAttributes![
+        stringFlagBandit.actionNumericAttributes[
             'ZXhwZWN0ZWRSZXZlbnVl'], // 'expectedRevenue' encoded
         equals('MTUuNzU='), // '15.75' encoded
       );
 
       // Check categorical attributes
       expect(stringFlagBandit.actionCategoricalAttributes, isNotNull);
-      expect(stringFlagBandit.actionCategoricalAttributes!.length, equals(2));
+      expect(stringFlagBandit.actionCategoricalAttributes.length, equals(2));
       expect(
         stringFlagBandit
-            .actionCategoricalAttributes!['Y2F0ZWdvcnk='], // 'category' encoded
+            .actionCategoricalAttributes['Y2F0ZWdvcnk='], // 'category' encoded
         equals('cHJvbW90aW9u'), // 'promotion' encoded
       );
       expect(
-        stringFlagBandit.actionCategoricalAttributes![
-            'cGxhY2VtZW50'], // 'placement' encoded
+        stringFlagBandit
+            .actionCategoricalAttributes['cGxhY2VtZW50'], // 'placement' encoded
         equals('aG9tZV9zY3JlZW4='), // 'home_screen' encoded
       );
 
