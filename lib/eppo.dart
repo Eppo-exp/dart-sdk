@@ -1,5 +1,7 @@
 import 'src/precompute_client.dart';
 
+export 'src/assignment_cache.dart'
+    show AssignmentCache, InMemoryAssignmentCache, NoOpAssignmentCache;
 export 'src/assignment_logger.dart' show AssignmentLogger, AssignmentEvent;
 export 'src/bandit_logger.dart' show BanditLogger, BanditEvent;
 export 'src/precompute_client.dart'
