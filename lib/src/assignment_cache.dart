@@ -1,7 +1,7 @@
 import 'package:eppo/src/crypto.dart';
 
 /// Assignment cache keys are only on the subject and flag level, while the entire value is used
-/// for uniqueness checking. This way if an assigned variation changes for a
+/// for uniqueness checking. This way if an assigned variation or bandit action changes for a
 /// flag, it evicts the old one. Then, if an older assignment is later reassigned, it will be treated
 /// as new.
 class AssignmentCacheKey {
@@ -29,8 +29,14 @@ class AssignmentCacheKey {
   int get hashCode => subjectKey.hashCode ^ flagKey.hashCode;
 }
 
+/// Base class for cache values
+abstract class CacheValue {
+  /// Converts the value to a map
+  Map<String, String> toMap();
+}
+
 /// Cache value for variation assignments
-class VariationCacheValue {
+class VariationCacheValue implements CacheValue {
   /// The allocation key
   final String allocationKey;
 
@@ -44,6 +50,7 @@ class VariationCacheValue {
   });
 
   /// Converts the value to a map
+  @override
   Map<String, String> toMap() => {
         'allocationKey': allocationKey,
         'variationKey': variationKey,
@@ -61,8 +68,41 @@ class VariationCacheValue {
   int get hashCode => allocationKey.hashCode ^ variationKey.hashCode;
 }
 
+/// Cache value for bandit assignments
+class BanditCacheValue implements CacheValue {
+  /// The bandit key
+  final String banditKey;
+
+  /// The action key
+  final String actionKey;
+
+  /// Creates a new bandit cache value
+  const BanditCacheValue({
+    required this.banditKey,
+    required this.actionKey,
+  });
+
+  /// Converts the value to a map
+  @override
+  Map<String, String> toMap() => {
+        'banditKey': banditKey,
+        'actionKey': actionKey,
+      };
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BanditCacheValue &&
+          runtimeType == other.runtimeType &&
+          banditKey == other.banditKey &&
+          actionKey == other.actionKey;
+
+  @override
+  int get hashCode => banditKey.hashCode ^ actionKey.hashCode;
+}
+
 /// Type alias for assignment cache values
-typedef AssignmentCacheValue = VariationCacheValue;
+typedef AssignmentCacheValue = CacheValue;
 
 /// Combined key and value for an assignment cache entry
 class AssignmentCacheEntry {
@@ -86,7 +126,7 @@ String assignmentCacheKeyToString(AssignmentCacheKey key) {
 
 /// Converts an [AssignmentCacheValue] to a string.
 String assignmentCacheValueToString(AssignmentCacheValue value) {
-  return getMD5Hash('${value.allocationKey};${value.variationKey}');
+  return getMD5Hash(value.toMap().values.join(';'));
 }
 
 /// Interface for an assignment cache

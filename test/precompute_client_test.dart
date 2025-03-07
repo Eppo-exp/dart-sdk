@@ -214,7 +214,7 @@ void main() {
           sdkPlatform: sdk.SdkPlatform.dart,
           apiClient: apiClient,
           assignmentLogger: loggerWithoutCache,
-          assignmentCache:
+          flagAssignmentCache:
               NoOpAssignmentCache(), // Use NoOpAssignmentCache to disable deduplication
         );
 
@@ -240,7 +240,7 @@ void main() {
           apiClient: apiClient,
           assignmentLogger: loggerWithCache,
           // Use explicit cache
-          assignmentCache: InMemoryAssignmentCache(),
+          flagAssignmentCache: InMemoryAssignmentCache(),
         );
 
         clientWithCache =
@@ -333,7 +333,7 @@ void main() {
             flagKey: 'test-flag',
             subjectKey: 'test-subject',
           ),
-          value: AssignmentCacheValue(
+          value: VariationCacheValue(
             allocationKey: 'test-allocation',
             variationKey: 'test-variation',
           ),
@@ -353,7 +353,7 @@ void main() {
             flagKey: 'test-flag',
             subjectKey: 'test-subject',
           ),
-          value: AssignmentCacheValue(
+          value: VariationCacheValue(
             allocationKey: 'test-allocation',
             variationKey: 'test-variation',
           ),
@@ -374,7 +374,7 @@ void main() {
             flagKey: 'test-flag',
             subjectKey: 'test-subject',
           ),
-          value: AssignmentCacheValue(
+          value: VariationCacheValue(
             allocationKey: 'different-allocation',
             variationKey: 'test-variation',
           ),
@@ -407,14 +407,14 @@ void main() {
         // Create a new cache entry with the same key but different value
         final newCacheEntry = AssignmentCacheEntry(
           key: cacheKey,
-          value: AssignmentCacheValue(
+          value: VariationCacheValue(
             allocationKey: 'allocation-1',
             variationKey: 'variation-changed',
           ),
         );
 
         // Set the new cache entry
-        sdkOptionsWithCache.assignmentCache.set(newCacheEntry);
+        sdkOptionsWithCache.flagAssignmentCache.set(newCacheEntry);
 
         // Get the assignment again - this should log again because the cache value changed
         clientWithCache.getStringAssignment('string-flag', 'default');

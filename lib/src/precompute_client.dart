@@ -30,7 +30,7 @@ class SdkOptions {
   /// Optional API client for testing
   final EppoApiClient? apiClient;
 
-  /// Assignment cache
+  /// Assignment cache for flags
   ///
   /// By default, an InMemoryAssignmentCache is used to prevent duplicate logging of the same assignment.
   /// To disable assignment deduplication, use NoOpAssignmentCache:
@@ -40,7 +40,10 @@ class SdkOptions {
   ///   assignmentCache: NoOpAssignmentCache(),
   /// )
   /// ```
-  final AssignmentCache assignmentCache;
+  final AssignmentCache flagAssignmentCache;
+
+  /// Assignment cache for bandit actions
+  final AssignmentCache banditActionCache;
 
   /// Creates a new set of precomputed flags request parameters
   SdkOptions({
@@ -52,8 +55,10 @@ class SdkOptions {
     this.requestTimeoutMs,
     this.throwOnFailedInitialization,
     this.apiClient,
-    AssignmentCache? assignmentCache,
-  }) : assignmentCache = assignmentCache ?? InMemoryAssignmentCache();
+    AssignmentCache? flagAssignmentCache,
+    AssignmentCache? banditActionCache,
+  })  : flagAssignmentCache = flagAssignmentCache ?? InMemoryAssignmentCache(),
+        banditActionCache = banditActionCache ?? InMemoryAssignmentCache();
 }
 
 /// Options for creating a precomputed client
@@ -354,13 +359,13 @@ class EppoPrecomputedClient {
 
     // Check if we've already logged this assignment
     if (variation != null && allocationKey != null) {
-      final hasLoggedAssignment = _sdkOptions.assignmentCache.has(
+      final hasLoggedAssignment = _sdkOptions.flagAssignmentCache.has(
         AssignmentCacheEntry(
           key: AssignmentCacheKey(
             flagKey: flagKey,
             subjectKey: subjectKey,
           ),
-          value: AssignmentCacheValue(
+          value: VariationCacheValue(
             allocationKey: allocationKey,
             variationKey: variation.key,
           ),
@@ -379,13 +384,13 @@ class EppoPrecomputedClient {
       }
 
       // Update the assignment cache
-      _sdkOptions.assignmentCache.set(
+      _sdkOptions.flagAssignmentCache.set(
         AssignmentCacheEntry(
           key: AssignmentCacheKey(
             flagKey: flagKey,
             subjectKey: subjectKey,
           ),
-          value: AssignmentCacheValue(
+          value: VariationCacheValue(
             allocationKey: allocationKey ?? '__eppo_no_allocation',
             variationKey: variation?.key ?? '__eppo_no_variation',
           ),
@@ -398,8 +403,53 @@ class EppoPrecomputedClient {
   }
 
   void _logBanditAction(BanditEvent event) {
-    if (_sdkOptions.banditLogger != null) {
-      _sdkOptions.banditLogger!.logBanditEvent(event);
+    final subjectKey = event.subject;
+    final flagKey = event.featureFlag;
+    final banditKey = event.bandit;
+    final actionKey = event.action ?? '__eppo_no_action';
+
+    // Check if this bandit action has been logged before
+    final hasLoggedBanditAction = _sdkOptions.banditActionCache.has(
+      AssignmentCacheEntry(
+        key: AssignmentCacheKey(
+          flagKey: flagKey,
+          subjectKey: subjectKey,
+        ),
+        value: BanditCacheValue(
+          banditKey: banditKey,
+          actionKey: actionKey,
+        ),
+      ),
+    );
+
+    if (hasLoggedBanditAction) {
+      // Ignore repeat assignment
+      return;
+    }
+
+    // If here, we have a new assignment to be logged
+    try {
+      if (_sdkOptions.banditLogger != null) {
+        _sdkOptions.banditLogger!.logBanditEvent(event);
+      }
+      // TODO: Add bandit events to queue to flush if needed
+
+      // Record in the assignment cache to deduplicate subsequent repeat assignments
+      _sdkOptions.banditActionCache.set(
+        AssignmentCacheEntry(
+          key: AssignmentCacheKey(
+            flagKey: flagKey,
+            subjectKey: subjectKey,
+          ),
+          value: BanditCacheValue(
+            banditKey: banditKey,
+            actionKey: actionKey,
+          ),
+        ),
+      );
+    } catch (error) {
+      _logger.severe(
+          '$defaultLoggerPrefix Error logging bandit action event: $error');
     }
   }
 
