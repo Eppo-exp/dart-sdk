@@ -11,8 +11,7 @@ void main() {
 
     setUpAll(() {
       final jsonString = File(
-        //'test/test-sample-data/configuration-wire/precomputed-v1.json',
-        'test/precomputed-v1.json',
+        'test/test-sample-data/configuration-wire/precomputed-v1.json',
       ).readAsStringSync();
 
       final jsonData = jsonDecode(jsonString);
