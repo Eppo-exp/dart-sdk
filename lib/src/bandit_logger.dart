@@ -1,7 +1,4 @@
 class BanditEvent {
-  /// The timestamp when the event occurred
-  final DateTime timestamp;
-
   /// The feature flag key
   final String featureFlag;
 
@@ -10,6 +7,9 @@ class BanditEvent {
 
   /// The subject key
   final String subject;
+
+  /// The timestamp when the event occurred
+  final DateTime timestamp;
 
   /// The action associated with the bandit
   final String? action;

@@ -11,11 +11,8 @@ import 'subject.dart';
 import 'configuration_wire_protocol.dart';
 import 'api_client.dart';
 
-// Parameters for precomputed flags requests
-class SdkOptions {
-  /// SDK key for authentication
-  final String sdkKey;
-
+// Configuration for the precomputed client
+class ClientConfiguration {
   /// Assignment logger
   final AssignmentLogger? assignmentLogger;
 
@@ -53,8 +50,7 @@ class SdkOptions {
   final AssignmentCache banditActionCache;
 
   /// Creates a new set of precomputed flags request parameters
-  SdkOptions({
-    required this.sdkKey,
+  ClientConfiguration({
     this.assignmentLogger,
     this.banditLogger,
     this.sdkPlatform,
@@ -68,58 +64,45 @@ class SdkOptions {
         banditActionCache = banditActionCache ?? InMemoryAssignmentCache();
 }
 
-/// Options for creating a precomputed client
-class PrecomputeArguments {
-  /// Subject information
-  final Subject subject;
-
-  /// Bandit actions
-  final Map<String, Map<String, Map<String, dynamic>>>? banditActions;
-
-  const PrecomputeArguments({
-    required this.subject,
-    this.banditActions,
-  });
-}
-
 /// Client for evaluating precomputed feature flags and bandits
 class EppoPrecomputedClient {
-  final SdkOptions _sdkOptions;
-  final PrecomputeArguments _precompute;
+  final String _sdkKey;
+  final SubjectEvaluation _subjectEvaluation;
+  final ClientConfiguration _clientConfiguration;
   final ConfigurationStore<ObfuscatedPrecomputedFlag> _precomputedFlagStore;
   final ConfigurationStore<ObfuscatedPrecomputedBandit> _precomputedBanditStore;
   EppoApiClient? _apiClient;
   final Logger _logger = Logger('EppoPrecomputedClient');
 
   /// Creates a new precomputed client
-  EppoPrecomputedClient(SdkOptions sdkOptions, PrecomputeArguments precompute)
-      : _sdkOptions = sdkOptions,
-        _precompute = precompute,
+  EppoPrecomputedClient(String sdkKey, SubjectEvaluation subjectEvaluation,
+      ClientConfiguration clientConfiguration)
+      : _sdkKey = sdkKey,
+        _subjectEvaluation = subjectEvaluation,
+        _clientConfiguration = clientConfiguration,
         _precomputedFlagStore =
             InMemoryConfigurationStore<ObfuscatedPrecomputedFlag>(),
         _precomputedBanditStore =
             InMemoryConfigurationStore<ObfuscatedPrecomputedBandit>(),
-        _apiClient = sdkOptions.apiClient;
+        _apiClient = clientConfiguration.apiClient;
 
   /// Fetches precomputed flags from the server
   Future<void> fetchPrecomputedFlags() async {
     final throwOnFailedInitialization =
-        _sdkOptions.throwOnFailedInitialization ?? false;
+        _clientConfiguration.throwOnFailedInitialization ?? false;
 
     // Only create a new API client if one wasn't provided in the options
     _apiClient ??= EppoApiClient(
-      sdkKey: _sdkOptions.sdkKey,
+      sdkKey: _sdkKey,
       sdkVersion: getSdkVersion(),
-      sdkPlatform: _sdkOptions.sdkPlatform ?? SdkPlatform.unknown,
-      baseUrl: _sdkOptions.baseUrl,
-      requestTimeout: _sdkOptions.requestTimeout,
+      sdkPlatform: _clientConfiguration.sdkPlatform ?? SdkPlatform.unknown,
+      baseUrl: _clientConfiguration.baseUrl,
+      requestTimeout: _clientConfiguration.requestTimeout,
     );
 
     try {
       final response = await _apiClient!.fetchPrecomputedFlags(
-        subjectKey: _precompute.subject.subjectKey,
-        subjectAttributes: _precompute.subject.subjectAttributes,
-        banditActions: _precompute.banditActions ?? {},
+        _subjectEvaluation,
       );
 
       _precomputedFlagStore.update(response.flags,
@@ -248,22 +231,23 @@ class EppoPrecomputedClient {
       timestamp: DateTime.timestamp(),
       featureFlag: flagKey,
       bandit: decodedBanditKey,
-      subject: _precompute.subject.subjectKey,
+      subject: _subjectEvaluation.subject.subjectKey,
       action: decodedAction,
       actionProbability: obfuscatedBandit.actionProbability,
       optimalityGap: obfuscatedBandit.optimalityGap,
       modelVersion: decodedModelVersion,
       subjectNumericAttributes:
-          _precompute.subject.subjectAttributes.numericAttributes.map(
+          _subjectEvaluation.subject.subjectAttributes?.numericAttributes.map(
         (key, value) => MapEntry(key, value.toDouble()),
       ),
-      subjectCategoricalAttributes:
-          _precompute.subject.subjectAttributes.categoricalAttributes.map(
+      subjectCategoricalAttributes: _subjectEvaluation
+          .subject.subjectAttributes?.categoricalAttributes
+          .map(
         (key, value) => MapEntry(key, value),
       ),
       actionNumericAttributes: decodedActionNumericAttributes,
       actionCategoricalAttributes: decodedActionCategoricalAttributes,
-      metaData: _buildLoggerMetadata(),
+      metaData: buildLoggerMetadata(),
     );
 
     try {
@@ -319,8 +303,9 @@ class EppoPrecomputedClient {
     final result = FlagEvaluation(
       flagKey: flagKey,
       format: _precomputedFlagStore.getFormat() ?? '',
-      subjectKey: _precompute.subject.subjectKey,
-      subjectAttributes: _precompute.subject.subjectAttributes,
+      subjectKey: _subjectEvaluation.subject.subjectKey,
+      subjectAttributes:
+          _subjectEvaluation.subject.subjectAttributes ?? ContextAttributes(),
       variation: Variation(
         key: precomputedFlag.variationKey != null
             ? decodeBase64(precomputedFlag.variationKey!)
@@ -374,12 +359,12 @@ class EppoPrecomputedClient {
       subject: subjectKey,
       timestamp: DateTime.timestamp(),
       subjectAttributes: subjectAttributes.toJson(),
-      metaData: _buildLoggerMetadata(),
+      metaData: buildLoggerMetadata(),
     );
 
     // Check if we've already logged this assignment
     if (variation != null && allocationKey != null) {
-      final hasLoggedAssignment = _sdkOptions.flagAssignmentCache.has(
+      final hasLoggedAssignment = _clientConfiguration.flagAssignmentCache.has(
         AssignmentCacheEntry(
           key: AssignmentCacheKey(
             flagKey: flagKey,
@@ -399,12 +384,12 @@ class EppoPrecomputedClient {
 
     // TODO: Add assignments to queue to flush.
     try {
-      if (_sdkOptions.assignmentLogger != null) {
-        _sdkOptions.assignmentLogger!.logAssignment(event);
+      if (_clientConfiguration.assignmentLogger != null) {
+        _clientConfiguration.assignmentLogger!.logAssignment(event);
       }
 
       // Update the assignment cache
-      _sdkOptions.flagAssignmentCache.set(
+      _clientConfiguration.flagAssignmentCache.set(
         AssignmentCacheEntry(
           key: AssignmentCacheKey(
             flagKey: flagKey,
@@ -429,7 +414,7 @@ class EppoPrecomputedClient {
     final actionKey = event.action ?? '__eppo_no_action';
 
     // Check if this bandit action has been logged before
-    final hasLoggedBanditAction = _sdkOptions.banditActionCache.has(
+    final hasLoggedBanditAction = _clientConfiguration.banditActionCache.has(
       AssignmentCacheEntry(
         key: AssignmentCacheKey(
           flagKey: flagKey,
@@ -449,13 +434,13 @@ class EppoPrecomputedClient {
 
     // If here, we have a new assignment to be logged
     try {
-      if (_sdkOptions.banditLogger != null) {
-        _sdkOptions.banditLogger!.logBanditEvent(event);
+      if (_clientConfiguration.banditLogger != null) {
+        _clientConfiguration.banditLogger!.logBanditEvent(event);
       }
       // TODO: Add bandit events to queue to flush if needed
 
       // Record in the assignment cache to deduplicate subsequent repeat assignments
-      _sdkOptions.banditActionCache.set(
+      _clientConfiguration.banditActionCache.set(
         AssignmentCacheEntry(
           key: AssignmentCacheKey(
             flagKey: flagKey,
@@ -474,14 +459,6 @@ class EppoPrecomputedClient {
         StackTrace.current,
       );
     }
-  }
-
-  /// Builds metadata for the logger
-  Map<String, dynamic> _buildLoggerMetadata() {
-    return {
-      'sdkVersion': getSdkVersion(),
-      'sdkName': SdkPlatform.dart.toString(),
-    };
   }
 
   ObfuscatedPrecomputedFlag? _getPrecomputedFlag(String flagKey) {

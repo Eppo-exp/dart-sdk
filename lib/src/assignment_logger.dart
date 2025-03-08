@@ -1,3 +1,5 @@
+import 'sdk_version.dart';
+
 /// Represents an event for logging an assignment
 class AssignmentEvent {
   /// The allocation the subject was assigned to
@@ -45,4 +47,12 @@ class AssignmentEvent {
 abstract class AssignmentLogger {
   /// Logs an assignment event
   void logAssignment(AssignmentEvent event);
+}
+
+Map<String, dynamic> buildLoggerMetadata() {
+  return {
+    'obfuscated': true,
+    'sdkLanguage': getSdkName(SdkPlatform.dart),
+    'sdkLibVersion': getSdkVersion(),
+  };
 }

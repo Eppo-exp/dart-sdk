@@ -36,11 +36,9 @@ class EppoApiClient {
         _httpClient = httpClient ?? DefaultEppoHttpClient();
 
   /// Fetches precomputed flags for a subject
-  Future<ObfuscatedPrecomputedConfigurationResponse> fetchPrecomputedFlags({
-    required String subjectKey,
-    required ContextAttributes subjectAttributes,
-    Map<String, Map<String, Map<String, dynamic>>>? banditActions,
-  }) async {
+  Future<ObfuscatedPrecomputedConfigurationResponse> fetchPrecomputedFlags(
+    SubjectEvaluation subjectEvaluation,
+  ) async {
     // Build URL with query parameters
     final queryParams = {
       'apiKey': sdkKey,
@@ -54,15 +52,23 @@ class EppoApiClient {
     );
     final url = uri.toString();
 
+    // Add validation for subject_key
+    if (subjectEvaluation.subject.subjectKey.isEmpty) {
+      throw ArgumentError('subject_key is required and cannot be empty');
+    }
+
     // Prepare the payload
     final payload = {
-      'subject_key': subjectKey,
-      'subject_attributes': subjectAttributes.toJson(),
+      'subject_key': subjectEvaluation.subject.subjectKey,
+      // Always provide a valid structure for subject_attributes even if it's null in the input
+      'subject_attributes':
+          subjectEvaluation.subject.subjectAttributes?.toJson() ??
+              ContextAttributes().toJson(),
     };
 
     // Add bandit actions if available
-    if (banditActions != null) {
-      payload['bandit_actions'] = banditActions;
+    if (subjectEvaluation.banditActions != null) {
+      payload['bandit_actions'] = subjectEvaluation.banditActions ?? {};
     }
 
     final responseData = await _httpClient.post(

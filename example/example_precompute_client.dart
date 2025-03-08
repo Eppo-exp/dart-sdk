@@ -48,20 +48,17 @@ void main(List<String> args) async {
     subjectKey: subjectKey,
     subjectAttributes: attributes,
   );
+  final subjectEvaluation = SubjectEvaluation(subject: subject);
 
   // Create SDK options
-  final sdkOptions = SdkOptions(
-    sdkKey: sdkKey,
+  final clientConfiguration = ClientConfiguration(
     sdkPlatform: SdkPlatform.dart,
     assignmentLogger: MyAssignmentLogger(),
   );
 
-  // Create precompute arguments
-  final precomputeArgs = PrecomputeArguments(subject: subject);
-
   // Create client
   // fetch precomputed flags
-  await Eppo.initialize(precomputeArgs, sdkOptions);
+  await Eppo.initialize(sdkKey, subjectEvaluation, clientConfiguration);
 
   // Print some example assignments
   print('\nExample flag assignments:');

@@ -4,12 +4,12 @@ class Subject {
   final String subjectKey;
 
   /// The subject attributes
-  final ContextAttributes subjectAttributes;
+  final ContextAttributes? subjectAttributes;
 
   /// Creates a new subject
   const Subject({
     required this.subjectKey,
-    required this.subjectAttributes,
+    this.subjectAttributes,
   });
 }
 
@@ -37,4 +37,18 @@ class ContextAttributes {
       'categoricalAttributes': categoricalAttributes,
     };
   }
+}
+
+/// Options for creating a precomputed client
+class SubjectEvaluation {
+  /// Subject information
+  final Subject subject;
+
+  /// Bandit actions
+  final Map<String, Map<String, Map<String, dynamic>>>? banditActions;
+
+  const SubjectEvaluation({
+    required this.subject,
+    this.banditActions,
+  });
 }

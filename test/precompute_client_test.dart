@@ -143,18 +143,18 @@ void main() {
 
       // Create SDK options
       mockLogger = MockAssignmentLogger();
-      final sdkOptions = SdkOptions(
-        sdkKey: sdkKey,
+      final clientConfiguration = ClientConfiguration(
         sdkPlatform: SdkPlatform.dart,
         apiClient: apiClient,
         assignmentLogger: mockLogger,
       );
 
       // Create precompute arguments
-      final precomputeArgs = PrecomputeArguments(subject: subject);
+      final subjectEvaluation = SubjectEvaluation(subject: subject);
 
       // Create client
-      client = EppoPrecomputedClient(sdkOptions, precomputeArgs);
+      client =
+          EppoPrecomputedClient(sdkKey, subjectEvaluation, clientConfiguration);
 
       // Fetch precomputed flags
       await client.fetchPrecomputedFlags();
@@ -210,13 +210,12 @@ void main() {
       late EppoPrecomputedClient clientWithCache;
       late MockAssignmentLogger loggerWithoutCache;
       late MockAssignmentLogger loggerWithCache;
-      late SdkOptions sdkOptionsWithCache;
+      late ClientConfiguration sdkOptionsWithCache;
 
       setUp(() async {
         // Setup client without assignment cache
         loggerWithoutCache = MockAssignmentLogger();
-        final sdkOptionsWithoutCache = SdkOptions(
-          sdkKey: sdkKey,
+        final sdkOptionsWithoutCache = ClientConfiguration(
           sdkPlatform: SdkPlatform.dart,
           apiClient: apiClient,
           assignmentLogger: loggerWithoutCache,
@@ -224,7 +223,7 @@ void main() {
               NoOpAssignmentCache(), // Use NoOpAssignmentCache to disable deduplication
         );
 
-        final precomputeArgs = PrecomputeArguments(
+        final subjectEvaluation = SubjectEvaluation(
           subject: Subject(
             subjectKey: subjectKey,
             subjectAttributes: ContextAttributes(
@@ -234,14 +233,16 @@ void main() {
           ),
         );
 
-        clientWithoutCache =
-            EppoPrecomputedClient(sdkOptionsWithoutCache, precomputeArgs);
+        clientWithoutCache = EppoPrecomputedClient(
+          sdkKey,
+          subjectEvaluation,
+          sdkOptionsWithoutCache,
+        );
         await clientWithoutCache.fetchPrecomputedFlags();
 
         // Setup client with assignment cache
         loggerWithCache = MockAssignmentLogger();
-        sdkOptionsWithCache = SdkOptions(
-          sdkKey: sdkKey,
+        sdkOptionsWithCache = ClientConfiguration(
           sdkPlatform: SdkPlatform.dart,
           apiClient: apiClient,
           assignmentLogger: loggerWithCache,
@@ -249,8 +250,11 @@ void main() {
           flagAssignmentCache: InMemoryAssignmentCache(),
         );
 
-        clientWithCache =
-            EppoPrecomputedClient(sdkOptionsWithCache, precomputeArgs);
+        clientWithCache = EppoPrecomputedClient(
+          sdkKey,
+          subjectEvaluation,
+          sdkOptionsWithCache,
+        );
         await clientWithCache.fetchPrecomputedFlags();
       });
 

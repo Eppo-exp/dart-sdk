@@ -114,9 +114,13 @@ void main() {
 
         // Act
         final result = await apiClient.fetchPrecomputedFlags(
-          subjectKey: 'user-123',
-          subjectAttributes: ContextAttributes(
-            categoricalAttributes: {'country': 'US'},
+          SubjectEvaluation(
+            subject: Subject(
+              subjectKey: 'user-123',
+              subjectAttributes: ContextAttributes(
+                categoricalAttributes: {'country': 'US'},
+              ),
+            ),
           ),
         );
 
@@ -148,8 +152,11 @@ void main() {
           // Act & Assert
           expect(
             () => apiClient.fetchPrecomputedFlags(
-              subjectKey: 'user-123',
-              subjectAttributes: ContextAttributes(),
+              SubjectEvaluation(
+                subject: Subject(
+                  subjectKey: 'user-123',
+                ),
+              ),
             ),
             throwsA(isA<HttpException>()),
           );
@@ -172,8 +179,11 @@ void main() {
         // Act & Assert
         expect(
           () => apiClient.fetchPrecomputedFlags(
-            subjectKey: 'user-123',
-            subjectAttributes: ContextAttributes(),
+            SubjectEvaluation(
+              subject: Subject(
+                subjectKey: 'user-123',
+              ),
+            ),
           ),
           throwsA(isA<TimeoutException>()),
         );
@@ -195,8 +205,11 @@ void main() {
         // Act & Assert
         expect(
           () => apiClient.fetchPrecomputedFlags(
-            subjectKey: 'user-123',
-            subjectAttributes: ContextAttributes(),
+            SubjectEvaluation(
+              subject: Subject(
+                subjectKey: 'user-123',
+              ),
+            ),
           ),
           throwsA(isA<FormatException>()),
         );
@@ -216,8 +229,11 @@ void main() {
         // Act & Assert
         expect(
           () => apiClient.fetchPrecomputedFlags(
-            subjectKey: 'user-123',
-            subjectAttributes: ContextAttributes(),
+            SubjectEvaluation(
+              subject: Subject(
+                subjectKey: 'user-123',
+              ),
+            ),
           ),
           throwsA(
             isA<HttpException>().having(
@@ -243,8 +259,11 @@ void main() {
         // Act & Assert
         expect(
           () => apiClient.fetchPrecomputedFlags(
-            subjectKey: 'user-123',
-            subjectAttributes: ContextAttributes(),
+            SubjectEvaluation(
+              subject: Subject(
+                subjectKey: 'user-123',
+              ),
+            ),
           ),
           throwsA(
             isA<HttpException>().having(
@@ -272,11 +291,147 @@ void main() {
         // Act & Assert
         expect(
           () => apiClient.fetchPrecomputedFlags(
-            subjectKey: 'user-123',
-            subjectAttributes: ContextAttributes(),
+            SubjectEvaluation(
+              subject: Subject(
+                subjectKey: 'user-123',
+              ),
+            ),
           ),
           throwsA(isA<Exception>()),
         );
+      });
+    });
+
+    group('request payload formatting', () {
+      setUp(() {
+        // Common setup for all payload tests
+        mockHttpClient = MockEppoHttpClient(responseData: {
+          'flags': {},
+          'bandits': {},
+          'salt': 'test-salt',
+          'format': 'precomputed',
+          'obfuscated': true,
+          'createdAt': '2023-01-01T00:00:00Z',
+          'environment': {'name': 'test-env'},
+        });
+
+        apiClient = EppoApiClient(
+          sdkKey: sdkKey,
+          sdkVersion: sdkVersion,
+          sdkPlatform: SdkPlatform.dart,
+          baseUrl: baseUrl,
+          httpClient: mockHttpClient,
+        );
+      });
+
+      test('formats request with just subject key', () async {
+        // Act
+        await apiClient.fetchPrecomputedFlags(
+          SubjectEvaluation(
+            subject: Subject(
+              subjectKey: 'user-123',
+            ),
+          ),
+        );
+
+        // Assert
+        expect(mockHttpClient.lastPayload, isNotNull);
+        expect(mockHttpClient.lastPayload!['subject_key'], equals('user-123'));
+        expect(mockHttpClient.lastPayload!['subject_attributes'], isMap);
+        expect(
+            mockHttpClient.lastPayload!['subject_attributes']
+                ['categoricalAttributes'],
+            isEmpty);
+        expect(
+            mockHttpClient.lastPayload!['subject_attributes']
+                ['numericAttributes'],
+            isEmpty);
+        expect(
+            mockHttpClient.lastPayload!.containsKey('bandit_actions'), isFalse);
+      });
+
+      test('formats request with subject attributes', () async {
+        // Act
+        await apiClient.fetchPrecomputedFlags(
+          SubjectEvaluation(
+            subject: Subject(
+              subjectKey: 'user-456',
+              subjectAttributes: ContextAttributes(
+                categoricalAttributes: {'country': 'US', 'device': 'mobile'},
+                numericAttributes: {'age': 25, 'visits': 10},
+              ),
+            ),
+          ),
+        );
+
+        // Assert
+        expect(mockHttpClient.lastPayload, isNotNull);
+        expect(mockHttpClient.lastPayload!['subject_key'], equals('user-456'));
+
+        // Check subject_attributes exists
+        final subjectAttrs = mockHttpClient.lastPayload!['subject_attributes'];
+        expect(subjectAttrs, isNotNull);
+        expect(subjectAttrs, isA<Map>());
+
+        // Check for categoricalAttributes and numericAttributes
+        expect(subjectAttrs.containsKey('categoricalAttributes'), isTrue);
+        expect(subjectAttrs.containsKey('numericAttributes'), isTrue);
+
+        // Check categorical values
+        final categorical = subjectAttrs['categoricalAttributes'];
+        expect(categorical, isA<Map>());
+        expect(categorical['country'], equals('US'));
+        expect(categorical['device'], equals('mobile'));
+
+        // Check numeric values
+        final numeric = subjectAttrs['numericAttributes'];
+        expect(numeric, isA<Map>());
+        expect(numeric['age'], equals(25));
+        expect(numeric['visits'], equals(10));
+      });
+
+      test('formats request with bandit actions', () async {
+        // Act
+        await apiClient.fetchPrecomputedFlags(
+          SubjectEvaluation(
+            subject: Subject(
+              subjectKey: 'user-789',
+            ),
+            banditActions: {
+              'test-bandit': {
+                'action1': {'price': 10.99, 'category': 'electronics'},
+                'action2': {'price': 5.99, 'category': 'books'}
+              }
+            },
+          ),
+        );
+
+        // Assert
+        expect(mockHttpClient.lastPayload, isNotNull);
+        expect(mockHttpClient.lastPayload!['subject_key'], equals('user-789'));
+        expect(mockHttpClient.lastPayload!['bandit_actions'], isMap);
+        expect(mockHttpClient.lastPayload!['bandit_actions']['test-bandit'],
+            isMap);
+        expect(
+            mockHttpClient.lastPayload!['bandit_actions']['test-bandit']
+                ['action1'],
+            isMap);
+        expect(
+            mockHttpClient.lastPayload!['bandit_actions']['test-bandit']
+                ['action1']['price'],
+            equals(10.99));
+        expect(
+            mockHttpClient.lastPayload!['bandit_actions']['test-bandit']
+                ['action1']['category'],
+            equals('electronics'));
+        expect(
+            mockHttpClient.lastPayload!['bandit_actions']['test-bandit']
+                ['action2'],
+            isMap);
+        expect(
+            mockHttpClient.lastPayload!['bandit_actions']['test-bandit']
+                ['action2']['price'],
+            equals(5.99));
       });
     });
   });
