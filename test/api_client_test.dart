@@ -15,7 +15,7 @@ class MockEppoHttpClient implements EppoHttpClient {
   // Track the last request for verification
   String? lastUrl;
   Map<String, dynamic>? lastPayload;
-  int? lastTimeoutMs;
+  Duration? lastTimeout;
   Map<String, String>? lastHeaders;
 
   MockEppoHttpClient({
@@ -28,13 +28,13 @@ class MockEppoHttpClient implements EppoHttpClient {
   Future<Map<String, dynamic>> post(
     String url,
     Map<String, dynamic> payload,
-    int timeoutMs,
+    Duration timeout,
     Map<String, String> headers,
   ) async {
     // Store request details for verification
     lastUrl = url;
     lastPayload = payload;
-    lastTimeoutMs = timeoutMs;
+    lastTimeout = timeout;
     lastHeaders = headers;
 
     // Simulate errors if configured
@@ -59,7 +59,6 @@ void main() {
     const sdkKey = 'test-sdk-key';
     const sdkVersion = '1.0.0';
     const baseUrl = 'https://api.test.com';
-    const requestTimeoutMs = 5000;
 
     setUp(() {
       mockHttpClient = MockEppoHttpClient();
@@ -68,7 +67,6 @@ void main() {
         sdkVersion: sdkVersion,
         sdkPlatform: SdkPlatform.dart,
         baseUrl: baseUrl,
-        requestTimeoutMs: requestTimeoutMs,
         httpClient: mockHttpClient,
       );
     });
@@ -111,7 +109,6 @@ void main() {
           sdkVersion: sdkVersion,
           sdkPlatform: SdkPlatform.dart,
           baseUrl: baseUrl,
-          requestTimeoutMs: requestTimeoutMs,
           httpClient: mockHttpClient,
         );
 
@@ -145,7 +142,6 @@ void main() {
             sdkVersion: sdkVersion,
             sdkPlatform: SdkPlatform.dart,
             baseUrl: baseUrl,
-            requestTimeoutMs: requestTimeoutMs,
             httpClient: mockHttpClient,
           );
 
@@ -170,7 +166,6 @@ void main() {
           sdkVersion: sdkVersion,
           sdkPlatform: SdkPlatform.dart,
           baseUrl: baseUrl,
-          requestTimeoutMs: requestTimeoutMs,
           httpClient: mockHttpClient,
         );
 
@@ -194,7 +189,6 @@ void main() {
           sdkVersion: sdkVersion,
           sdkPlatform: SdkPlatform.dart,
           baseUrl: baseUrl,
-          requestTimeoutMs: requestTimeoutMs,
           httpClient: mockHttpClient,
         );
 
@@ -216,7 +210,6 @@ void main() {
           sdkVersion: sdkVersion,
           sdkPlatform: SdkPlatform.dart,
           baseUrl: baseUrl,
-          requestTimeoutMs: requestTimeoutMs,
           httpClient: mockHttpClient,
         );
 
@@ -244,7 +237,6 @@ void main() {
           sdkVersion: sdkVersion,
           sdkPlatform: SdkPlatform.dart,
           baseUrl: 'https://invalid-url.com',
-          requestTimeoutMs: requestTimeoutMs,
           httpClient: mockHttpClient,
         );
 
@@ -274,7 +266,6 @@ void main() {
           sdkVersion: sdkVersion,
           sdkPlatform: SdkPlatform.dart,
           baseUrl: baseUrl,
-          requestTimeoutMs: requestTimeoutMs,
           httpClient: mockHttpClient,
         );
 

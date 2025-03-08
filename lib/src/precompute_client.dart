@@ -9,7 +9,6 @@ import 'crypto.dart';
 import 'sdk_version.dart';
 import 'subject.dart';
 import 'configuration_wire_protocol.dart';
-import 'constants.dart';
 import 'api_client.dart';
 
 // Parameters for precomputed flags requests
@@ -17,20 +16,20 @@ class SdkOptions {
   /// SDK key for authentication
   final String sdkKey;
 
-  /// Platform for the SDK
-  final SdkPlatform? sdkPlatform;
-
   /// Assignment logger
   final AssignmentLogger? assignmentLogger;
 
   /// Bandit logger
   final BanditLogger? banditLogger;
 
+  /// Platform for the SDK
+  final SdkPlatform? sdkPlatform;
+
   /// Base URL for API requests
   final String? baseUrl;
 
-  /// Request timeout in milliseconds
-  final int? requestTimeoutMs;
+  /// Request timeout
+  final Duration? requestTimeout;
 
   /// Whether to throw on failed initialization
   final bool? throwOnFailedInitialization;
@@ -56,11 +55,11 @@ class SdkOptions {
   /// Creates a new set of precomputed flags request parameters
   SdkOptions({
     required this.sdkKey,
-    required this.sdkPlatform,
     this.assignmentLogger,
     this.banditLogger,
+    this.sdkPlatform,
     this.baseUrl,
-    this.requestTimeoutMs,
+    this.requestTimeout,
     this.throwOnFailedInitialization,
     this.apiClient,
     AssignmentCache? flagAssignmentCache,
@@ -113,7 +112,7 @@ class EppoPrecomputedClient {
       sdkVersion: getSdkVersion(),
       sdkPlatform: _sdkOptions.sdkPlatform ?? SdkPlatform.unknown,
       baseUrl: _sdkOptions.baseUrl,
-      requestTimeoutMs: _sdkOptions.requestTimeoutMs,
+      requestTimeout: _sdkOptions.requestTimeout,
     );
 
     try {
@@ -128,15 +127,19 @@ class EppoPrecomputedClient {
       _precomputedBanditStore.update(response.bandits,
           salt: response.salt, format: response.format.toString());
 
-      _logger
-          .info('$defaultLoggerPrefix Successfully fetched precomputed flags');
+      _logger.info(
+        'successfully fetched precomputed flags',
+        {
+          'flags': response.flags.length,
+          'bandits': response.bandits.length,
+        },
+      );
     } catch (e) {
       if (throwOnFailedInitialization) {
-        throw Exception('Failed to initialize precomputed flags: $e');
+        throw Exception('failed to initialize precomputed flags: $e');
       } else {
         _logger.severe(
-          '$defaultLoggerPrefix Failed to initialize precomputed flags: $e',
-        );
+            'failed to initialize precomputed flags', e, StackTrace.current);
       }
     }
   }
@@ -191,7 +194,7 @@ class EppoPrecomputedClient {
           try {
             return JsonDecoder().convert(value) as Map<String, dynamic>;
           } catch (e) {
-            _logger.warning('$defaultLoggerPrefix Error parsing JSON: $e');
+            _logger.warning('unable to parse JSON', e, StackTrace.current);
             return defaultValue;
           }
         } else if (value is Map) {
@@ -199,7 +202,7 @@ class EppoPrecomputedClient {
           try {
             return Map<String, dynamic>.from(value);
           } catch (e) {
-            _logger.warning('$defaultLoggerPrefix Error converting Map: $e');
+            _logger.warning('unable to convert Map', e, StackTrace.current);
             return defaultValue;
           }
         }
@@ -217,7 +220,10 @@ class EppoPrecomputedClient {
 
     if (obfuscatedBandit == null) {
       _logger.warning(
-        '$defaultLoggerPrefix No assigned variation. Bandit not found: $flagKey',
+        'no assigned variation because bandit not found',
+        {
+          'flagKey': flagKey,
+        },
       );
       return BanditEvaluation(variation: defaultValue, action: null);
     }
@@ -239,7 +245,7 @@ class EppoPrecomputedClient {
     final assignedVariation = getStringAssignment(flagKey, defaultValue);
 
     final banditEvent = BanditEvent(
-      timestamp: DateTime.now().toIso8601String(),
+      timestamp: DateTime.timestamp(),
       featureFlag: flagKey,
       bandit: decodedBanditKey,
       subject: _precompute.subject.subjectKey,
@@ -263,8 +269,7 @@ class EppoPrecomputedClient {
     try {
       _logBanditAction(banditEvent);
     } catch (error) {
-      _logger
-          .severe('$defaultLoggerPrefix Error logging bandit action: $error');
+      _logger.severe('unable to log bandit action', error, StackTrace.current);
     }
 
     return BanditEvaluation(
@@ -286,16 +291,24 @@ class EppoPrecomputedClient {
 
     if (precomputedFlag == null) {
       _logger.warning(
-        '$defaultLoggerPrefix No assigned variation. Flag not found: $flagKey',
+        'no assigned variation because flag not found',
+        {
+          'flagKey': flagKey,
+        },
       );
       return defaultValue;
     }
 
     // Add type checking before proceeding
     if (!checkTypeMatch(expectedType, precomputedFlag.variationType)) {
-      final errorMessage =
-          '$defaultLoggerPrefix Type mismatch: expected ${expectedType.name} but flag $flagKey has type ${precomputedFlag.variationType.name}';
-      _logger.warning(errorMessage);
+      _logger.warning(
+        'type mismatch',
+        {
+          'expected': expectedType.name,
+          'flagKey': flagKey,
+          'actual': precomputedFlag.variationType.name,
+        },
+      );
       return defaultValue;
     }
 
@@ -338,7 +351,7 @@ class EppoPrecomputedClient {
       }
       return defaultValue;
     } catch (error) {
-      _logger.warning('$defaultLoggerPrefix Error transforming value: $error');
+      _logger.warning('unable to transform value', error, StackTrace.current);
       return defaultValue;
     }
   }
@@ -359,10 +372,9 @@ class EppoPrecomputedClient {
       format: format,
       variation: variation?.key,
       subject: subjectKey,
-      timestamp: DateTime.now().toIso8601String(),
+      timestamp: DateTime.timestamp(),
       subjectAttributes: subjectAttributes.toJson(),
       metaData: _buildLoggerMetadata(),
-      evaluationDetails: null,
     );
 
     // Check if we've already logged this assignment
@@ -406,7 +418,7 @@ class EppoPrecomputedClient {
       );
     } catch (error) {
       _logger.severe(
-          '$defaultLoggerPrefix Error logging assignment event: $error');
+          'unable to log assignment event', error, StackTrace.current);
     }
   }
 
@@ -457,7 +469,10 @@ class EppoPrecomputedClient {
       );
     } catch (error) {
       _logger.severe(
-          '$defaultLoggerPrefix Error logging bandit action event: $error');
+        'unable to log bandit action event',
+        error,
+        StackTrace.current,
+      );
     }
   }
 
@@ -473,7 +488,7 @@ class EppoPrecomputedClient {
     final salt = _precomputedFlagStore.salt;
 
     if (salt == null) {
-      _logger.warning('$defaultLoggerPrefix Missing salt for flag store');
+      _logger.warning('missing salt for flag store');
       return null;
     }
 
@@ -485,7 +500,7 @@ class EppoPrecomputedClient {
     final salt = _precomputedBanditStore.salt;
 
     if (salt == null) {
-      _logger.warning('$defaultLoggerPrefix Missing salt for bandit store');
+      _logger.warning('missing salt for bandit store');
       return null;
     }
 

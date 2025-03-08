@@ -19,16 +19,13 @@ class AssignmentEvent {
   final String subject;
 
   /// The timestamp of the assignment
-  final String timestamp;
+  final DateTime timestamp;
 
   /// The subject attributes
   final Map<String, dynamic>? subjectAttributes;
 
   /// Additional metadata
   final Map<String, dynamic>? metaData;
-
-  /// Details about the evaluation
-  final Map<String, dynamic>? evaluationDetails;
 
   /// Creates a new assignment event
   const AssignmentEvent({
@@ -41,24 +38,7 @@ class AssignmentEvent {
     required this.timestamp,
     this.subjectAttributes,
     this.metaData,
-    this.evaluationDetails,
   });
-
-  /// Converts this assignment event to a JSON map
-  Map<String, dynamic> toJson() {
-    return {
-      if (allocation != null) 'allocation': allocation,
-      if (experiment != null) 'experiment': experiment,
-      'featureFlag': featureFlag,
-      'format': format,
-      if (variation != null) 'variation': variation,
-      'subject': subject,
-      'timestamp': timestamp,
-      if (subjectAttributes != null) 'subjectAttributes': subjectAttributes,
-      if (metaData != null) 'metaData': metaData,
-      if (evaluationDetails != null) 'evaluationDetails': evaluationDetails,
-    };
-  }
 }
 
 /// Interface for logging assignment events

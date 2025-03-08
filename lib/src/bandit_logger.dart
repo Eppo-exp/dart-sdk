@@ -1,6 +1,6 @@
 class BanditEvent {
   /// The timestamp when the event occurred
-  final String timestamp;
+  final DateTime timestamp;
 
   /// The feature flag key
   final String featureFlag;

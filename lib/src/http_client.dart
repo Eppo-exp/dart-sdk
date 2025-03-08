@@ -18,7 +18,7 @@ abstract class EppoHttpClient {
   Future<Map<String, dynamic>> post(
     String url,
     Map<String, dynamic> payload,
-    int timeoutMs,
+    Duration timeout,
     Map<String, String> headers,
   );
 }
@@ -28,23 +28,21 @@ class DefaultEppoHttpClient implements EppoHttpClient {
   final http.Client _client;
 
   DefaultEppoHttpClient([http.Client? client])
-    : _client = client ?? http.Client();
+      : _client = client ?? http.Client();
 
   @override
   Future<Map<String, dynamic>> post(
     String url,
     Map<String, dynamic> payload,
-    int timeoutMs,
+    Duration timeout,
     Map<String, String> headers,
   ) async {
     try {
-      final response = await _client
-          .post(
-            Uri.parse(url),
-            body: jsonEncode(payload),
-            headers: {'Content-Type': 'application/json', ...headers},
-          )
-          .timeout(Duration(milliseconds: timeoutMs));
+      final response = await _client.post(
+        Uri.parse(url),
+        body: jsonEncode(payload),
+        headers: {'Content-Type': 'application/json', ...headers},
+      ).timeout(timeout);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return jsonDecode(response.body) as Map<String, dynamic>;
@@ -56,7 +54,8 @@ class DefaultEppoHttpClient implements EppoHttpClient {
     } on FormatException {
       throw FormatException('Invalid JSON response');
     } on TimeoutException {
-      throw TimeoutException('Request timed out after ${timeoutMs}ms');
+      throw TimeoutException(
+          'Request timed out after ${timeout.inMilliseconds}ms');
     } catch (e) {
       if (e is HttpException) rethrow;
       throw Exception('Network error: $e');
