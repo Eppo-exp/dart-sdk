@@ -5,17 +5,13 @@ import 'package:logging/logging.dart';
 class MyAssignmentLogger extends AssignmentLogger {
   @override
   void logAssignment(AssignmentEvent event) {
-    print(event.timestamp);
+    print(
+        'logAssignment: ${event.featureFlag} ${event.variation} ${event.timestamp}');
   }
 }
 
-/// This example demonstrates how to use the EppoPrecomputedClient to fetch and evaluate
-/// feature flags for a given subject.
-///
-/// Usage:
-/// ```
-/// dart example/load_precompute_response.dart <sdk-key> [subject-key]
-/// ```
+/// This example demonstrates how to use the Eppo SDK to fetch and evaluate
+/// feature flags and bandit actions for a given subject.
 ///
 /// The SDK key is required and should be a valid Eppo SDK key.
 /// The subject key is optional and defaults to 'user-123'.
@@ -26,7 +22,7 @@ void main(List<String> args) async {
   // Check for SDK key in arguments
   if (args.isEmpty) {
     print(
-      'Usage: dart example/load_precompute_response.dart <sdk-key> [subject-key]',
+      'Usage: dart example/example_precompute_client.dart <sdk-key> <subject-key>',
     );
     exit(1);
   }
@@ -34,19 +30,13 @@ void main(List<String> args) async {
   final sdkKey = args[0];
   final subjectKey = args.length > 1 ? args[1] : 'user-123';
 
-  print('Using SDK key: $sdkKey');
-  print('Using subject key: $subjectKey');
-
-  // Create subject attributes
-  final attributes = ContextAttributes(
-    categoricalAttributes: {'country': 'US', 'device': 'mobile'},
-    numericAttributes: {'age': 30, 'visits': 5},
-  );
-
-  // Create subject
+  // Create subject with attributes
   final subject = Subject(
     subjectKey: subjectKey,
-    subjectAttributes: attributes,
+    subjectAttributes: ContextAttributes(
+      categoricalAttributes: {'country': 'US', 'device': 'mobile'},
+      numericAttributes: {'age': 30, 'visits': 5},
+    ),
   );
   final subjectEvaluation = SubjectEvaluation(subject: subject);
 
@@ -56,8 +46,7 @@ void main(List<String> args) async {
     assignmentLogger: MyAssignmentLogger(),
   );
 
-  // Create client
-  // fetch precomputed flags
+  // Initialize the SDK
   await Eppo.initialize(sdkKey, subjectEvaluation, clientConfiguration);
 
   // Print some example assignments
