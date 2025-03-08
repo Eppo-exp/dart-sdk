@@ -23,7 +23,7 @@ class Eppo {
   /// This must be called before any other Eppo methods.
   ///
   /// Parameters:
-  /// - [sdkKey]: Your Eppo API key for authentication.
+  /// - [sdkKey]: Your Eppo SDK key for authentication.
   /// - [subjectEvaluation]: Contains the subject information and optional bandit actions.
   /// - [clientConfiguration]: Configuration options for the SDK client.
   ///
