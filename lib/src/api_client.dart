@@ -48,14 +48,11 @@ class EppoApiClient {
       'sdkName': getSdkName(sdkPlatform),
     };
 
-    final queryString = queryParams.entries
-        .map(
-          (e) =>
-              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
-        )
-        .join('&');
-
-    final url = '$baseUrl$precomputedFlagsEndpoint?$queryString';
+    final uri = Uri.parse(baseUrl).replace(
+      path: precomputedFlagsEndpoint,
+      queryParameters: queryParams,
+    );
+    final url = uri.toString();
 
     // Prepare the payload
     final payload = {
