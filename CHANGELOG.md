@@ -1,3 +1,11 @@
+# Changelog
+
+## 1.0.0-alpha.2
+
+- Added `reset` method to clear the client instance
+- Added documentation to all public methods
+- Adjusted payload formatting for precomputed flags
+
 ## 1.0.0-alpha.1
 
 - Initial alpha release
