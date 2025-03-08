@@ -72,16 +72,16 @@ class ObfuscatedPrecomputedConfigurationResponse {
 /// Represents a precomputed flag with a value and type
 class ObfuscatedPrecomputedFlag {
   /// Optional allocation key
-  final MD5String? allocationKey;
+  final Base64String? allocationKey;
 
   /// Optional variation key
-  final MD5String? variationKey;
+  final Base64String? variationKey;
 
   /// Type of variation
   final VariationType variationType;
 
   /// Optional extra logging information
-  final Map<String, String>? extraLogging;
+  final Map<String, Base64String>? extraLogging;
 
   /// Whether to log this flag
   final bool doLog;
@@ -100,12 +100,12 @@ class ObfuscatedPrecomputedFlag {
 
   factory ObfuscatedPrecomputedFlag.fromJson(Map<String, dynamic> json) {
     // Handle extraLogging safely
-    Map<String, String>? extraLoggingMap;
+    Map<String, Base64String>? extraLoggingMap;
     if (json['extraLogging'] != null) {
       final extraLoggingRaw = json['extraLogging'] as Map;
-      extraLoggingMap = Map<String, String>.fromEntries(
-        extraLoggingRaw.entries.map(
-            (entry) => MapEntry(entry.key.toString(), entry.value.toString())),
+      extraLoggingMap = Map<String, Base64String>.fromEntries(
+        extraLoggingRaw.entries.map((entry) =>
+            MapEntry(entry.key.toString(), entry.value as Base64String)),
       );
     }
 
