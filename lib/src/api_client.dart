@@ -21,7 +21,7 @@ class EppoApiClient {
   final String baseUrl;
 
   /// Request timeout in milliseconds
-  final int requestTimeoutMs;
+  final Duration requestTimeout;
 
   /// Creates a new API client
   EppoApiClient({
@@ -29,10 +29,10 @@ class EppoApiClient {
     required this.sdkVersion,
     required this.sdkPlatform,
     String? baseUrl,
-    int? requestTimeoutMs,
+    Duration? requestTimeout,
     EppoHttpClient? httpClient,
   })  : baseUrl = baseUrl ?? precomputedBaseUrl,
-        requestTimeoutMs = requestTimeoutMs ?? defaultRequestTimeoutMs,
+        requestTimeout = requestTimeout ?? defaultRequestTimeout,
         _httpClient = httpClient ?? DefaultEppoHttpClient();
 
   /// Fetches precomputed flags for a subject
@@ -68,7 +68,7 @@ class EppoApiClient {
     final responseData = await _httpClient.post(
       url,
       payload,
-      requestTimeoutMs,
+      requestTimeout,
       {},
     );
 

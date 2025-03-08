@@ -5,9 +5,7 @@ import 'package:logging/logging.dart';
 class MyAssignmentLogger extends AssignmentLogger {
   @override
   void logAssignment(AssignmentEvent event) {
-    print('--------------------------------');
-    print('Assignment event: ${event.toJson()}');
-    print('--------------------------------');
+    print(event.timestamp);
   }
 }
 

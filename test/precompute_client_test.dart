@@ -17,7 +17,7 @@ class MockEppoHttpClient implements EppoHttpClient {
   Future<Map<String, dynamic>> post(
     String url,
     Map<String, dynamic> payload,
-    int timeoutMs,
+    Duration timeout,
     Map<String, String> headers,
   ) async {
     return responseData;
