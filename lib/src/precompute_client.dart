@@ -66,42 +66,39 @@ class ClientConfiguration {
 
 /// Client for evaluating precomputed feature flags and bandits
 class EppoPrecomputedClient {
-  final String _sdkKey;
   final SubjectEvaluation _subjectEvaluation;
   final ClientConfiguration _clientConfiguration;
   final ConfigurationStore<ObfuscatedPrecomputedFlag> _precomputedFlagStore;
   final ConfigurationStore<ObfuscatedPrecomputedBandit> _precomputedBanditStore;
-  EppoApiClient? _apiClient;
+  final EppoApiClient _apiClient;
   final Logger _logger = Logger('EppoPrecomputedClient');
 
   /// Creates a new precomputed client
   EppoPrecomputedClient(String sdkKey, SubjectEvaluation subjectEvaluation,
       ClientConfiguration clientConfiguration)
-      : _sdkKey = sdkKey,
-        _subjectEvaluation = subjectEvaluation,
+      : _subjectEvaluation = subjectEvaluation,
         _clientConfiguration = clientConfiguration,
         _precomputedFlagStore =
             InMemoryConfigurationStore<ObfuscatedPrecomputedFlag>(),
         _precomputedBanditStore =
             InMemoryConfigurationStore<ObfuscatedPrecomputedBandit>(),
-        _apiClient = clientConfiguration.apiClient;
+        _apiClient = clientConfiguration.apiClient ??
+            EppoApiClient(
+              sdkKey: sdkKey,
+              sdkVersion: getSdkVersion(),
+              sdkPlatform:
+                  clientConfiguration.sdkPlatform ?? SdkPlatform.unknown,
+              baseUrl: clientConfiguration.baseUrl,
+              requestTimeout: clientConfiguration.requestTimeout,
+            );
 
   /// Fetches precomputed flags from the server
   Future<void> fetchPrecomputedFlags() async {
     final throwOnFailedInitialization =
         _clientConfiguration.throwOnFailedInitialization ?? false;
 
-    // Only create a new API client if one wasn't provided in the options
-    _apiClient ??= EppoApiClient(
-      sdkKey: _sdkKey,
-      sdkVersion: getSdkVersion(),
-      sdkPlatform: _clientConfiguration.sdkPlatform ?? SdkPlatform.unknown,
-      baseUrl: _clientConfiguration.baseUrl,
-      requestTimeout: _clientConfiguration.requestTimeout,
-    );
-
     try {
-      final response = await _apiClient!.fetchPrecomputedFlags(
+      final response = await _apiClient.fetchPrecomputedFlags(
         _subjectEvaluation,
       );
 

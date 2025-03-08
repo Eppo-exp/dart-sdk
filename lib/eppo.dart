@@ -1,5 +1,3 @@
-import 'package:logging/logging.dart';
-
 import 'src/precompute_client.dart';
 import 'src/subject.dart';
 export 'src/assignment_cache.dart'
@@ -15,8 +13,16 @@ export 'src/sdk_version.dart' show SdkPlatform;
 /// Eppo is a feature flagging and experimentation platform that allows you to
 /// control feature rollouts and run A/B tests in your application.
 class Eppo {
-  static EppoPrecomputedClient? _clientInstance;
-  static final Logger _logger = Logger('eppo');
+  // Private constructor to prevent direct instantiation
+  Eppo._();
+
+  // Singleton instance of the client
+  static EppoPrecomputedClient? _instance;
+
+  /// Gets the current client instance.
+  ///
+  /// Returns null if the SDK has not been initialized.
+  static EppoPrecomputedClient? get instance => _instance;
 
   /// Initializes the Eppo SDK with the provided configuration.
   ///
@@ -49,28 +55,11 @@ class Eppo {
       String sdkKey,
       SubjectEvaluation subjectEvaluation,
       ClientConfiguration clientConfiguration) async {
-    _clientInstance =
+    // Always create a new instance, replacing any existing one
+    _instance =
         EppoPrecomputedClient(sdkKey, subjectEvaluation, clientConfiguration);
-    await fetchPrecomputedFlags();
-  }
 
-  /// Fetches precomputed flags on-demand.
-  ///
-  /// This can be called to refresh flag values without reinitializing the SDK.
-  /// If the SDK is not initialized, a warning will be logged and the method will return.
-  ///
-  /// Returns a Future that completes when flags have been fetched.
-  ///
-  /// Example:
-  /// ```dart
-  /// await Eppo.fetchPrecomputedFlags();
-  /// ```
-  static Future<void> fetchPrecomputedFlags() async {
-    if (_clientInstance == null) {
-      _logger.warning('Eppo not initialized');
-      return;
-    }
-    await _clientInstance!.fetchPrecomputedFlags();
+    await _instance!.fetchPrecomputedFlags();
   }
 
   /// Gets a string assignment for the specified flag.
@@ -86,7 +75,7 @@ class Eppo {
   /// String buttonText = Eppo.getStringAssignment('button-text-flag', 'Click me');
   /// ```
   static String getStringAssignment(String flagKey, String defaultValue) {
-    return _clientInstance?.getStringAssignment(flagKey, defaultValue) ??
+    return _instance?.getStringAssignment(flagKey, defaultValue) ??
         defaultValue;
   }
 
@@ -103,7 +92,7 @@ class Eppo {
   /// bool showFeature = Eppo.getBooleanAssignment('show-new-feature', false);
   /// ```
   static bool getBooleanAssignment(String flagKey, bool defaultValue) {
-    return _clientInstance?.getBooleanAssignment(flagKey, defaultValue) ??
+    return _instance?.getBooleanAssignment(flagKey, defaultValue) ??
         defaultValue;
   }
 
@@ -120,7 +109,7 @@ class Eppo {
   /// int maxItems = Eppo.getIntegerAssignment('max-items-flag', 10);
   /// ```
   static int getIntegerAssignment(String flagKey, int defaultValue) {
-    return _clientInstance?.getIntegerAssignment(flagKey, defaultValue) ??
+    return _instance?.getIntegerAssignment(flagKey, defaultValue) ??
         defaultValue;
   }
 
@@ -137,7 +126,7 @@ class Eppo {
   /// double discountRate = Eppo.getNumericAssignment('discount-rate', 0.1);
   /// ```
   static double getNumericAssignment(String flagKey, double defaultValue) {
-    return _clientInstance?.getNumericAssignment(flagKey, defaultValue) ??
+    return _instance?.getNumericAssignment(flagKey, defaultValue) ??
         defaultValue;
   }
 
@@ -158,8 +147,7 @@ class Eppo {
   /// ```
   static Map<String, dynamic> getJSONAssignment(
       String flagKey, Map<String, dynamic> defaultValue) {
-    return _clientInstance?.getJSONAssignment(flagKey, defaultValue) ??
-        defaultValue;
+    return _instance?.getJSONAssignment(flagKey, defaultValue) ?? defaultValue;
   }
 
   /// Gets a bandit action for the specified flag.
@@ -180,7 +168,7 @@ class Eppo {
   /// String? action = result.action;
   /// ```
   static BanditEvaluation getBanditAction(String flagKey, String defaultValue) {
-    return _clientInstance?.getBanditAction(flagKey, defaultValue) ??
+    return _instance?.getBanditAction(flagKey, defaultValue) ??
         BanditEvaluation(variation: defaultValue, action: null);
   }
 
@@ -195,6 +183,6 @@ class Eppo {
   /// Eppo.reset();
   /// ```
   static void reset() {
-    _clientInstance = null;
+    _instance = null;
   }
 }
