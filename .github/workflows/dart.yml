@@ -31,7 +31,9 @@ jobs:
           sdk: 'stable'
       - name: Install dependencies
         run: dart pub get
+      - name: Fetch test data
+        run: make test-data
       - name: Run tests
         run: dart test
       - name: Run example
-        run: dart run example/eppo_sdk_example.dart
+        run: dart example/example_precompute_client.dart ${{ secrets.SDK_KEY }} github-subject
