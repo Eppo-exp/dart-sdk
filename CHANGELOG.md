@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+- Improved pub.dev metadata to include correct repository and documentation
+
 ## 1.0.0
 
 - Initial release
