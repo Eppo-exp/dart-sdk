@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2
+
+- Added benchmarks for flag evaluation and configuration fetch
+
 ## 1.0.1
 
 - Improved pub.dev metadata to include correct repository and documentation

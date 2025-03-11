@@ -58,3 +58,17 @@ dart analyze
 ```bash
 dart test
 ```
+
+### Running the benchmarks
+
+The SDK includes a benchmark for evaluating the performance of the SDK when evaluating feature flags.
+
+```bash
+dart run benchmark/flag_evaluation.dart <sdk-key> <subject-key>
+```
+
+The SDK also includes a benchmark for evaluating the performance of the SDK when fetching configurations.
+
+```bash
+dart run benchmark/configuration_fetch.dart <sdk-key> <subject-key>
+```
