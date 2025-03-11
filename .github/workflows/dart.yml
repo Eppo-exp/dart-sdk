@@ -37,3 +37,17 @@ jobs:
         run: dart test
       - name: Run example
         run: dart example/main.dart ${{ secrets.SDK_KEY }} github-subject
+
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 'stable'
+      - name: Install dependencies
+        run: dart pub get
+      - name: Run benchmarks
+        run: dart run benchmark/flag_evaluation.dart ${{ secrets.SDK_KEY }} github-subject
+      - name: Run configuration fetch benchmark
+        run: dart run benchmark/configuration_fetch.dart ${{ secrets.SDK_KEY }} github-subject
