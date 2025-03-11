@@ -55,7 +55,7 @@ final subjectEvaluation = SubjectEvaluation(subject: subject);
 
 ### Providing Bandit Actions
 
-When using bandit algorithms, you can provide actions and their rewards during initialization:
+When using bandit algorithms, you must provide actions during initialization:
 
 ```dart
 // Create a subject evaluation with bandit actions
