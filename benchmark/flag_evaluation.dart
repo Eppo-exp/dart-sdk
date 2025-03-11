@@ -23,7 +23,9 @@ class FlagEvaluationBenchmark extends BenchmarkBase {
   @override
   void setup() {
     Eppo.initialize(
-        sdkKey, SubjectEvaluation(subject: Subject(subjectKey: subjectKey)));
+        sdkKey,
+        SubjectEvaluation(subject: Subject(subjectKey: subjectKey)),
+        ClientConfiguration());
   }
 
   // Not measured teardown code executed after the benchmark runs.

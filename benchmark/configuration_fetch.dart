@@ -27,7 +27,9 @@ class ConfigurationFetchBenchmark extends AsyncBenchmarkBase {
 
     // Measure the time it takes to initialize the SDK
     await Eppo.initialize(
-        sdkKey, SubjectEvaluation(subject: Subject(subjectKey: subjectKey)));
+        sdkKey,
+        SubjectEvaluation(subject: Subject(subjectKey: subjectKey)),
+        ClientConfiguration());
   }
 
   // Not measured setup code executed prior to the benchmark runs.
