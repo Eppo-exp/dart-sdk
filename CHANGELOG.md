@@ -2,7 +2,7 @@
 
 ## 1.0.2
 
-- Updated base URL to `https://fscdn.eppo.cloud`
+- Updated base URL to `https://fscdn.eppo.cloud/edge`
 
 ## 1.0.1
 
