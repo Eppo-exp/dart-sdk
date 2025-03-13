@@ -31,7 +31,7 @@ class EppoApiClient {
     String? baseUrl,
     Duration? requestTimeout,
     EppoHttpClient? httpClient,
-  })  : baseUrl = baseUrl ?? precomputedBaseUrl,
+  })  : baseUrl = baseUrl ?? eppoBaseUrl,
         requestTimeout = requestTimeout ?? defaultRequestTimeout,
         _httpClient = httpClient ?? DefaultEppoHttpClient();
 
