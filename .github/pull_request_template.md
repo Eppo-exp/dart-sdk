@@ -6,3 +6,6 @@
 
 # Testing
 <!-- Describe how you tested your changes. Include any relevant details about test cases, environments, and results. --> 
+
+# Documentation
+<!-- Describe how the developer impact has been (or will be) documented. Link to PR or Ticket if applicable -->
