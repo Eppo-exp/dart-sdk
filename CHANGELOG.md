@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2
+
+- Updated base URL to `https://fscdn.eppo.cloud/edge`
+
 ## 1.0.1
 
 - Improved pub.dev metadata to include correct repository and documentation
