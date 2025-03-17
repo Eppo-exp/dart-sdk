@@ -31,14 +31,14 @@ void main() {
     test('should decode configuration host when SDK key has both hosts', () {
       final hostname = SdkKeyDecoder.decodeConfigurationHostname(
         encodeSdkKey(
-          configHostname: '123456.e.testing.fscdn.eppo.cloud',
-          eventHostname: '123456.e.testing.eppo.cloud',
+          configHostname: 'https://123456.e.testing.fscdn.eppo.cloud',
+          eventHostname: 'https://123456.e.testing.eppo.cloud',
         ),
       );
       expect(hostname, equals('https://123456.e.testing.fscdn.eppo.cloud'));
     });
 
-    test('should add https://h prefix to hostname without scheme', () {
+    test('should add https prefix to hostname without scheme', () {
       final hostname = SdkKeyDecoder.decodeConfigurationHostname(
         encodeSdkKey(configHostname: '123456.e.testing.fscdn.eppo.cloud'),
       );
