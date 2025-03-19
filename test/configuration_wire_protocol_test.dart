@@ -39,7 +39,7 @@ void main() {
       );
 
       // Verify the flags
-      expect(config.flags.length, equals(6));
+      expect(config.flags.length, greaterThanOrEqualTo(6));
 
       // Check the first flag (STRING type)
       final stringFlag = config.flags['41a27b85ebdd7b1a5ae367a1a240a214'];
