@@ -26,22 +26,21 @@ class SDKKey {
       }
 
       final decodedString = decodeBase64(payload);
-      final queryPairs = <String, String>{};
-      final pairs = decodedString.split('&');
-
-      for (final pair in pairs) {
-        if (pair.isEmpty) {
-          continue;
-        }
-        final pairParts = pair.split('=');
-        final key = Uri.decodeComponent(pairParts[0]);
-        final value = pairParts.length > 1 ? Uri.decodeComponent(pairParts[1]) : null;
-
-        if (value != null) {
-          queryPairs[key] = value;
-        }
+      // decodeBase64 returns the original string if decoding fails
+      if (decodedString == payload) {
+        return {};
       }
-      return queryPairs;
+      
+      // Use URI class to parse query parameters
+      final uri = Uri.parse('http://dummy.com?$decodedString');
+      
+      // Convert query parameters to a Map<String, String>
+      final queryParams = <String, String>{};
+      uri.queryParameters.forEach((key, value) {
+        queryParams[key] = value;
+      });
+      
+      return queryParams;
     } catch (e) {
       // If there's an error parsing the token, return an empty map
       return {};
