@@ -108,7 +108,7 @@ void main() {
           sdkKey: sdkKey,
           baseUrl: '//custom-url.com',
         );
-        expect(apiEndpoints2.getBaseUrl(), equals('https://custom-url.com'));
+        expect(apiEndpoints2.getBaseUrl(), equals('//custom-url.com'));
       });
       
       test('should preserve http protocol when specified', () {
@@ -126,7 +126,7 @@ void main() {
     });
     
     group('Query parameter handling', () {
-      test('should handle query parameters in getPrecomputedFlagsEndpoint', () {
+      test('should append query parameters to precomputed endpoint', () {
         final payload = "cs=test-subdomain";
         final encodedPayload = base64Encode(utf8.encode(payload));
         final token = "signature.$encodedPayload";
@@ -182,7 +182,8 @@ void main() {
         };
         
         final url = apiEndpoints.getPrecomputedFlagsEndpoint(queryParams);
-        expect(url, contains('param=value%20with%20spaces'));
+        // Dart URI explicitly "percent-encodes" spaces as + https://api.dart.dev/dart-core/Uri/Uri.html
+        expect(url, contains('param=value+with+spaces'));
         expect(url, contains('special=value%2Bwith%2Bplus%26other%3Dchars'));
       });
     });

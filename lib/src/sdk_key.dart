@@ -1,7 +1,6 @@
-import 'dart:convert';
 import 'crypto.dart';
 
-/// Wrapper for an SDK key; built from the SDK Key token string, this class extracts encoded fields,
+/// SDK key, built from an enhanced SDK token string; this class extracts encoded fields,
 /// such as the customer-specific service gateway subdomain.
 class SDKKey {
   /// The original SDK token string
