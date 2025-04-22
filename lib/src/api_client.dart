@@ -19,9 +19,6 @@ class EppoApiClient {
   /// SDK name
   final SdkPlatform sdkPlatform;
 
-  /// Base URL for API requests
-  final String baseUrl;
-
   /// API endpoints instance
   final ApiEndpoints _apiEndpoints;
 
@@ -36,12 +33,11 @@ class EppoApiClient {
     String? baseUrl,
     Duration? requestTimeout,
     EppoHttpClient? httpClient,
-  })  : baseUrl = baseUrl ?? precomputedBaseUrl,
-        requestTimeout = requestTimeout ?? defaultRequestTimeout,
+  })  : requestTimeout = requestTimeout ?? defaultRequestTimeout,
         _httpClient = httpClient ?? DefaultEppoHttpClient(),
-        _apiEndpoints = ApiEndpoints(
+        _apiEndpoints = ApiEndpoints.precomputed(
           sdkKey: SDKKey(sdkKey),
-          baseUrl: baseUrl,
+          baseUrl: baseUrl, // optional, dev-specified base URL
         );
 
   /// Fetches precomputed flags for a subject

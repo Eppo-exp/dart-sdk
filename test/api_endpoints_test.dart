@@ -10,7 +10,7 @@ void main() {
         final encodedPayload = base64Encode(utf8.encode(payload));
         final token = "signature.$encodedPayload";
         final sdkKey = SDKKey(token);
-        final apiEndpoints = ApiEndpoints(
+        final apiEndpoints = ApiEndpoints.precomputed(
           sdkKey: sdkKey,
           baseUrl: 'https://custom-url.com',
         );
@@ -24,7 +24,7 @@ void main() {
         final encodedPayload = base64Encode(utf8.encode(payload));
         final token = "signature.$encodedPayload";
         final sdkKey = SDKKey(token);
-        final apiEndpoints = ApiEndpoints(
+        final apiEndpoints = ApiEndpoints.precomputed(
           sdkKey: sdkKey,
         );
         
@@ -34,7 +34,7 @@ void main() {
 
       test('should use default URL when no subdomain in SDK key', () {
         final sdkKey = SDKKey('invalid-token');
-        final apiEndpoints = ApiEndpoints(
+        final apiEndpoints = ApiEndpoints.precomputed(
           sdkKey: sdkKey,
         );
         
@@ -42,23 +42,12 @@ void main() {
         expect(apiEndpoints.getPrecomputedFlagsEndpoint(), equals('https://fs-edge-assignment.eppo.cloud/assignments'));
       });
 
-      test('should use custom defaultUrl when provided', () {
-        final sdkKey = SDKKey('invalid-token');
-        final apiEndpoints = ApiEndpoints(
-          sdkKey: sdkKey,
-          defaultUrl: 'https://custom-default.com',
-        );
-        
-        expect(apiEndpoints.getBaseUrl(), equals('https://custom-default.com'));
-        expect(apiEndpoints.getPrecomputedFlagsEndpoint(), equals('https://custom-default.com/assignments'));
-      });
-
       test('should prioritize baseUrl over subdomain', () {
         final payload = "cs=test-subdomain";
         final encodedPayload = base64Encode(utf8.encode(payload));
         final token = "signature.$encodedPayload";
         final sdkKey = SDKKey(token);
-        final apiEndpoints = ApiEndpoints(
+        final apiEndpoints = ApiEndpoints.precomputed(
           sdkKey: sdkKey,
           baseUrl: 'https://priority-url.com',
         );
@@ -76,14 +65,14 @@ void main() {
         final sdkKey = SDKKey(token);
         
         // URL with trailing slash
-        final apiEndpoints1 = ApiEndpoints(
+        final apiEndpoints1 = ApiEndpoints.precomputed(
           sdkKey: sdkKey,
           baseUrl: 'https://custom-url.com/',
         );
         expect(apiEndpoints1.getBaseUrl(), equals('https://custom-url.com'));
         
         // URL with multiple trailing slashes
-        final apiEndpoints2 = ApiEndpoints(
+        final apiEndpoints2 = ApiEndpoints.precomputed(
           sdkKey: sdkKey,
           baseUrl: 'https://custom-url.com///',
         );
@@ -97,14 +86,14 @@ void main() {
         final sdkKey = SDKKey(token);
         
         // URL without protocol
-        final apiEndpoints1 = ApiEndpoints(
+        final apiEndpoints1 = ApiEndpoints.precomputed(
           sdkKey: sdkKey,
           baseUrl: 'custom-url.com',
         );
         expect(apiEndpoints1.getBaseUrl(), equals('https://custom-url.com'));
         
         // URL with protocol-relative format
-        final apiEndpoints2 = ApiEndpoints(
+        final apiEndpoints2 = ApiEndpoints.precomputed(
           sdkKey: sdkKey,
           baseUrl: '//custom-url.com',
         );
@@ -117,7 +106,7 @@ void main() {
         final token = "signature.$encodedPayload";
         final sdkKey = SDKKey(token);
         
-        final apiEndpoints = ApiEndpoints(
+        final apiEndpoints = ApiEndpoints.precomputed(
           sdkKey: sdkKey,
           baseUrl: 'http://custom-url.com',
         );
@@ -131,7 +120,7 @@ void main() {
         final encodedPayload = base64Encode(utf8.encode(payload));
         final token = "signature.$encodedPayload";
         final sdkKey = SDKKey(token);
-        final apiEndpoints = ApiEndpoints(
+        final apiEndpoints = ApiEndpoints.precomputed(
           sdkKey: sdkKey,
           baseUrl: 'https://custom-url.com',
         );
@@ -154,7 +143,7 @@ void main() {
         final encodedPayload = base64Encode(utf8.encode(payload));
         final token = "signature.$encodedPayload";
         final sdkKey = SDKKey(token);
-        final apiEndpoints = ApiEndpoints(
+        final apiEndpoints = ApiEndpoints.precomputed(
           sdkKey: sdkKey,
           baseUrl: 'https://custom-url.com',
         );
@@ -171,7 +160,7 @@ void main() {
         final encodedPayload = base64Encode(utf8.encode(payload));
         final token = "signature.$encodedPayload";
         final sdkKey = SDKKey(token);
-        final apiEndpoints = ApiEndpoints(
+        final apiEndpoints = ApiEndpoints.precomputed(
           sdkKey: sdkKey,
           baseUrl: 'https://custom-url.com',
         );
@@ -194,7 +183,7 @@ void main() {
         final encodedPayload = base64Encode(utf8.encode(payload));
         final token = "signature.$encodedPayload";
         final sdkKey = SDKKey(token);
-        final apiEndpoints = ApiEndpoints(
+        final apiEndpoints = ApiEndpoints.precomputed(
           sdkKey: sdkKey,
           baseUrl: 'https://custom-url.com',
         );
@@ -222,7 +211,7 @@ void main() {
         final encodedPayload = base64Encode(utf8.encode(payload));
         final token = "signature.$encodedPayload";
         final sdkKey = SDKKey(token);
-        final apiEndpoints = ApiEndpoints(
+        final apiEndpoints = ApiEndpoints.precomputed(
           sdkKey: sdkKey,
           baseUrl: 'https://custom-url.com',
         );
@@ -236,7 +225,7 @@ void main() {
         final encodedPayload = base64Encode(utf8.encode(payload));
         final token = "signature.$encodedPayload";
         final sdkKey = SDKKey(token);
-        final apiEndpoints = ApiEndpoints(
+        final apiEndpoints = ApiEndpoints.precomputed(
           sdkKey: sdkKey,
           baseUrl: 'https://custom-url.com',
         );
@@ -250,7 +239,7 @@ void main() {
         final encodedPayload = base64Encode(utf8.encode(payload));
         final token = "signature.$encodedPayload";
         final sdkKey = SDKKey(token);
-        final apiEndpoints = ApiEndpoints(
+        final apiEndpoints = ApiEndpoints.precomputed(
           sdkKey: sdkKey,
           baseUrl: 'https://custom-url.com',
         );
@@ -266,7 +255,7 @@ void main() {
         final encodedPayload = base64Encode(utf8.encode(payload));
         final token = "signature.$encodedPayload";
         final sdkKey = SDKKey(token);
-        final apiEndpoints = ApiEndpoints(
+        final apiEndpoints = ApiEndpoints.precomputed(
           sdkKey: sdkKey,
           baseUrl: 'https://custom-url.com',
         );

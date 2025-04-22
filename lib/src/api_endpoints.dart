@@ -20,15 +20,30 @@ class ApiEndpoints {
   /// [sdkKey] SDK Key instance for subdomain
   /// [baseUrl] Custom base URL (optional)
   /// [defaultUrl] Default base URL (defaults to precomputedBaseUrl)
-  ApiEndpoints({
+  ApiEndpoints._({
     required this.sdkKey,
     this.baseUrl,
-    String? defaultUrl,
-  }) : defaultUrl = defaultUrl ?? precomputedBaseUrl;
+    required this.defaultUrl,
+  });
+
+  /// Creates a new ApiEndpoints instance configured for precomputed flags.
+  ///
+  /// [sdkKey] SDK Key instance for subdomain
+  /// [baseUrl] Custom base URL (optional)
+  static ApiEndpoints precomputed({
+    required SDKKey sdkKey,
+    String? baseUrl,
+  }) {
+    return ApiEndpoints._(
+      sdkKey: sdkKey,
+      baseUrl: baseUrl,
+      defaultUrl: precomputedBaseUrl,
+    );
+  }
 
   /// Gets the normalized base URL based on the following priority:
-  /// 1. If baseUrl is provided and not equal to DEFAULT_BASE_URL, use it
-  /// 2. If the SDK Key contains a subdomain, use it with DEFAULT_BASE_URL
+  /// 1. If baseUrl is provided and not equal to the default URL, use it
+  /// 2. If the SDK Key contains a subdomain, prepend to the defaultUrl
   /// 3. Otherwise, fall back to DEFAULT_BASE_URL
   ///
   /// The returned URL will:
