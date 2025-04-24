@@ -3,6 +3,8 @@ import 'constants.dart';
 import 'http_client.dart';
 import 'configuration_wire_protocol.dart';
 import 'subject.dart';
+import 'sdk_key.dart';
+import 'api_endpoints.dart';
 
 /// API client for Eppo services
 class EppoApiClient {
@@ -17,8 +19,8 @@ class EppoApiClient {
   /// SDK name
   final SdkPlatform sdkPlatform;
 
-  /// Base URL for API requests
-  final String baseUrl;
+  /// API endpoints instance
+  final ApiEndpoints _apiEndpoints;
 
   /// Request timeout in milliseconds
   final Duration requestTimeout;
@@ -31,9 +33,12 @@ class EppoApiClient {
     String? baseUrl,
     Duration? requestTimeout,
     EppoHttpClient? httpClient,
-  })  : baseUrl = baseUrl ?? precomputedBaseUrl,
-        requestTimeout = requestTimeout ?? defaultRequestTimeout,
-        _httpClient = httpClient ?? DefaultEppoHttpClient();
+  })  : requestTimeout = requestTimeout ?? defaultRequestTimeout,
+        _httpClient = httpClient ?? DefaultEppoHttpClient(),
+        _apiEndpoints = ApiEndpoints.precomputed(
+          sdkKey: SdkKey(sdkKey),
+          baseUrl: baseUrl, // optional, dev-specified base URL
+        );
 
   /// Fetches precomputed flags for a subject
   Future<ObfuscatedPrecomputedConfigurationResponse> fetchPrecomputedFlags(
@@ -46,11 +51,8 @@ class EppoApiClient {
       'sdkName': getSdkName(sdkPlatform),
     };
 
-    final uri = Uri.parse(baseUrl).replace(
-      path: precomputedFlagsEndpoint,
-      queryParameters: queryParams,
-    );
-    final url = uri.toString();
+    // Use the ApiEndpoints class to get the URL with query parameters
+    final url = _apiEndpoints.getPrecomputedFlagsEndpoint(queryParams);
 
     // Add validation for subject_key
     if (subjectEvaluation.subject.subjectKey.isEmpty) {
