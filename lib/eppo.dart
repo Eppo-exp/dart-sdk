@@ -7,8 +7,6 @@ export 'src/bandit_logger.dart' show BanditLogger, BanditEvent;
 export 'src/precompute_client.dart' show ClientConfiguration, BanditEvaluation;
 export 'src/subject.dart' show SubjectEvaluation, Subject, ContextAttributes;
 export 'src/sdk_version.dart' show SdkPlatform;
-export 'src/sdk_key.dart' show SDKKey;
-export 'src/api_endpoints.dart' show ApiEndpoints;
 
 /// The main interface to interact with the Eppo SDK.
 ///
