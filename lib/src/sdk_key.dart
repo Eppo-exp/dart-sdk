@@ -2,7 +2,7 @@ import 'crypto.dart';
 
 /// SDK key, built from an enhanced SDK token string; this class extracts encoded fields,
 /// such as the customer-specific service gateway subdomain.
-class SDKKey {
+class SdkKey {
   /// The original SDK token string
   final String sdkTokenString;
 
@@ -10,7 +10,7 @@ class SDKKey {
   final Map<String, String> decodedParams;
 
   /// Creates a new SDK key instance
-  SDKKey(this.sdkTokenString) : decodedParams = _decodeToken(sdkTokenString);
+  SdkKey(this.sdkTokenString) : decodedParams = _decodeToken(sdkTokenString);
 
   /// Decodes the token to extract parameters
   static Map<String, String> _decodeToken(String token) {
@@ -50,19 +50,19 @@ class SDKKey {
   /// Gets the subdomain from the decoded token.
   ///
   /// @return The subdomain or null if not present
-  String? getSubdomain() {
+  String? get subdomain {
     return decodedParams['cs'];
   }
 
   /// Gets the full SDK Key token string.
-  String getToken() {
+  String get token {
     return sdkTokenString;
   }
 
   /// Checks if the SDK Key had the subdomain encoded.
   ///
   /// @return true if the token is valid and contains required parameters
-  bool isValid() {
+  bool get isValid {
     return decodedParams.isNotEmpty;
   }
 }

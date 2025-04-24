@@ -36,7 +36,7 @@ class EppoApiClient {
   })  : requestTimeout = requestTimeout ?? defaultRequestTimeout,
         _httpClient = httpClient ?? DefaultEppoHttpClient(),
         _apiEndpoints = ApiEndpoints.precomputed(
-          sdkKey: SDKKey(sdkKey),
+          sdkKey: SdkKey(sdkKey),
           baseUrl: baseUrl, // optional, dev-specified base URL
         );
 

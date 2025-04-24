@@ -7,7 +7,7 @@ import 'sdk_key.dart';
 /// and defaultUrl in that order.
 class ApiEndpoints {
   /// The SDK key
-  final SDKKey sdkKey;
+  final SdkKey sdkKey;
   
   /// Custom base URL (optional)
   final String? baseUrl;
@@ -31,7 +31,7 @@ class ApiEndpoints {
   /// [sdkKey] SDK Key instance for subdomain
   /// [baseUrl] Custom base URL (optional)
   static ApiEndpoints precomputed({
-    required SDKKey sdkKey,
+    required SdkKey sdkKey,
     String? baseUrl,
   }) {
     return ApiEndpoints._(
@@ -58,8 +58,8 @@ class ApiEndpoints {
       // This is to prevent forcing the SDK to send requests to the CDN server without
       // a subdomain even when encoded in SDK Key.
       effectiveUrl = baseUrl!;
-    } else if (sdkKey.isValid()) {
-      final subdomain = sdkKey.getSubdomain();
+    } else if (sdkKey.isValid) {
+      final subdomain = sdkKey.subdomain;
       if (subdomain != null) {
         // Extract the domain part without protocol
         final domainPart = defaultUrl.replaceAll(RegExp(r'^(https?:)?//'), '');
