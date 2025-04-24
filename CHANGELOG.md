@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.0
+
+- Added Customer-specific routing
+
 ## 1.0.2
 
 - Added benchmarks for flag evaluation and configuration fetch
