@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import '../lib/eppo.dart';
+import 'package:eppo/eppo.dart';
 
 void main() {
   group('Multi-Instance Support', () {
@@ -60,8 +60,8 @@ void main() {
         ClientConfiguration(),
       );
 
-      final user1a = await Eppo.forSubject('user-1');
-      final user1b = await Eppo.forSubject('user-1');
+      await Eppo.forSubject('user-1');
+      await Eppo.forSubject('user-1'); // Second call should reuse existing instance
 
       expect(Eppo.activeSubjects.length, 1);
       expect(Eppo.activeSubjects, contains('user-1'));
