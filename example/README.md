@@ -1,14 +1,18 @@
 # Eppo Feature Flagging SDK Example
 
-This example demonstrates how to use the Eppo SDK for feature flagging and experimentation in a Dart application.
+This example demonstrates how to use the Eppo SDK for feature flagging and experimentation in a Dart application, showcasing both the traditional singleton API and the new multi-instance API.
 
 ## What This Example Shows
 
-- How to initialize the Eppo SDK
-- How to create and configure a subject with attributes
-- How to evaluate different types of feature flags (string, boolean, integer, numeric, JSON)
-- How to use bandit actions
-- How to implement a custom assignment logger
+- **Singleton API**: Traditional single-user SDK usage
+- **Multi-Instance API**: Managing multiple user contexts (anonymous vs. logged-in users)
+- **User State Transitions**: Handling anonymous → logged-in user flows
+- **API Coexistence**: How both APIs work together seamlessly
+- **Instance Management**: Creating, using, and cleaning up user instances
+- **Different User Types**: Anonymous users, free users, premium users with different attributes
+- **Feature Flag Types**: String, boolean, integer, numeric, JSON flags
+- **Bandit Actions**: Personalized recommendations and content selection
+- **Custom Assignment Logger**: Tracking flag assignments for analytics
 
 ## Running the Example
 
@@ -137,19 +141,96 @@ final banditValue = Eppo.getBanditAction('update-highlights-bandit', 'default-ba
 print('bandit-flag: action=${banditValue.action} variation=${banditValue.variation}');
 ```
 
-## Expected Output
+## Example Output Structure
 
-When run successfully, you should see output similar to:
+When run successfully, you'll see a comprehensive demonstration organized into 7 parts:
 
 ```
-Example flag assignments:
+🚀 Eppo SDK Multi-Instance Example
+===================================
+
+📱 Part 1: Singleton API
 -------------------------
-string-flag: value-from-eppo
-boolean-flag: true
-integer-flag: 42
-numeric-flag: 3.14
-json-flag: {key: value, nested: {property: example}}
-bandit-flag: action=recommended-action variation=variation-1
+✅ Initialized SDK for logged-in user: user-123
+   Premium feature enabled: true
+
+👥 Part 2: Multi-Instance API
+------------------------------
+✅ Created anonymous user instance
+✅ Created second user instance
+
+🔍 Part 3: Flag Evaluations Per User
+------------------------------------
+Anonymous user flags:
+   Premium feature: false
+   Show signup banner: false
+
+Second user flags:
+   Premium feature: false
+   Show signup banner: false
+
+🔗 Part 4: API Coexistence
+--------------------------
+Singleton API result: true
+Multi-instance API (same subject): true
+Results match: true
+
+📊 Part 5: Instance Management
+------------------------------
+Active subjects: [user-123, anonymous-session-abc123, user-456]
+Total instances: 3
+
+Cleaning up anonymous user...
+Active subjects after cleanup: [user-123, user-456]
+
+🔄 Part 6: User State Transition
+---------------------------------
+Simulating anonymous → logged-in user transition...
+Before login - signup banner: false
+After login - premium feature: true
+
+✨ Example completed successfully!
+Final active subjects: [user-123, user-456, user-789]
+```
+
+## Key API Additions
+
+### Multi-Instance Usage
+
+```dart
+// Create instances for different users
+final anonymousUser = await Eppo.forSubject(
+  'anonymous-session-123',
+  subjectAttributes: ContextAttributes(
+    categoricalAttributes: {'user_type': 'anonymous'},
+    numericAttributes: {'session_count': 1},
+  ),
+);
+
+final loggedInUser = await Eppo.forSubject(
+  'user-456',
+  subjectAttributes: ContextAttributes(
+    categoricalAttributes: {'user_type': 'authenticated', 'plan': 'premium'},
+    numericAttributes: {'age': 30, 'account_age_days': 180},
+  ),
+);
+
+// Use per-user flag evaluations
+bool showSignup = anonymousUser.getBooleanAssignment('signup-banner', false);
+bool premiumFeature = loggedInUser.getBooleanAssignment('premium-feature', false);
+```
+
+### Instance Management
+
+```dart
+// Check active instances
+List<String> activeUsers = Eppo.activeSubjects;
+
+// Clean up when user logs out
+Eppo.removeSubject('anonymous-session-123');
+
+// Reset all instances
+Eppo.reset();
 ```
 
 ## Further Reading
