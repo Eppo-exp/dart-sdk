@@ -16,8 +16,15 @@ class Eppo {
   // Private constructor to prevent direct instantiation
   Eppo._();
 
-  // Singleton instance of the client
+  // Singleton instance of the client (for backward compatibility)
   static EppoPrecomputedClient? _instance;
+
+  // Registry of client instances by subject key
+  static final Map<String, EppoPrecomputedClient> _instances = {};
+
+  // Configuration shared across instances
+  static String? _sharedSdkKey;
+  static ClientConfiguration? _sharedClientConfiguration;
 
   /// Gets the current client instance.
   ///
@@ -55,6 +62,10 @@ class Eppo {
       String sdkKey,
       SubjectEvaluation subjectEvaluation,
       ClientConfiguration clientConfiguration) async {
+    // Store shared configuration for multi-instance support
+    _sharedSdkKey = sdkKey;
+    _sharedClientConfiguration = clientConfiguration;
+
     // Always create a new instance, replacing any existing one
     _instance =
         EppoPrecomputedClient(sdkKey, subjectEvaluation, clientConfiguration);
@@ -172,17 +183,188 @@ class Eppo {
         BanditEvaluation(variation: defaultValue, action: null);
   }
 
-  /// Resets the SDK to an uninitialized state.
+  /// Gets or creates an SDK instance for a specific subject key.
   ///
-  /// This clears the client instance and requires initialize() to be called
-  /// again before using any other methods. Useful for testing or when switching users.
+  /// This allows you to have multiple SDK instances for different users,
+  /// such as one for anonymous users and another for logged-in users.
+  ///
+  /// Parameters:
+  /// - [subjectKey]: The unique identifier for the subject (user).
+  /// - [subjectAttributes]: Optional attributes for the subject.
+  /// - [banditActions]: Optional bandit actions for the subject.
+  ///
+  /// Returns an EppoInstance that provides flag evaluation methods for the specific subject.
+  ///
+  /// Example:
+  /// ```dart
+  /// // For anonymous user
+  /// final anonymousEppo = await Eppo.forSubject('anonymous-123');
+  /// String feature = anonymousEppo.getStringAssignment('feature-flag', 'default');
+  ///
+  /// // For logged-in user
+  /// final userEppo = await Eppo.forSubject(
+  ///   'user-456',
+  ///   subjectAttributes: ContextAttributes(
+  ///     categoricalAttributes: {'country': 'US'},
+  ///     numericAttributes: {'age': 25},
+  ///   ),
+  /// );
+  /// bool showFeature = userEppo.getBooleanAssignment('show-feature', false);
+  /// ```
+  static Future<EppoInstance> forSubject(
+    String subjectKey, {
+    ContextAttributes? subjectAttributes,
+    Map<String, Map<String, Map<String, dynamic>>>? banditActions,
+  }) async {
+    if (_sharedSdkKey == null || _sharedClientConfiguration == null) {
+      throw StateError(
+          'SDK not initialized. Call Eppo.initialize() first.');
+    }
+
+    // Check if we already have an instance for this subject
+    if (_instances.containsKey(subjectKey)) {
+      return EppoInstance._(_instances[subjectKey]!);
+    }
+
+    // Create new instance for this subject
+    final subjectEvaluation = SubjectEvaluation(
+      subject: Subject(
+        subjectKey: subjectKey,
+        subjectAttributes: subjectAttributes,
+      ),
+      banditActions: banditActions,
+    );
+
+    final client = EppoPrecomputedClient(
+      _sharedSdkKey!,
+      subjectEvaluation,
+      _sharedClientConfiguration!,
+    );
+
+    await client.fetchPrecomputedFlags();
+
+    // Store the instance
+    _instances[subjectKey] = client;
+
+    return EppoInstance._(client);
+  }
+
+  /// Removes an SDK instance for a specific subject key.
+  ///
+  /// This is useful for cleanup when a user logs out or is no longer active.
+  ///
+  /// Parameters:
+  /// - [subjectKey]: The unique identifier for the subject to remove.
   ///
   /// Example:
   /// ```dart
   /// // When user logs out
+  /// Eppo.removeSubject('user-456');
+  /// ```
+  static void removeSubject(String subjectKey) {
+    _instances.remove(subjectKey);
+  }
+
+  /// Gets all active subject keys that have SDK instances.
+  ///
+  /// Returns a list of subject keys that currently have active instances.
+  static List<String> get activeSubjects => _instances.keys.toList();
+
+  /// Resets the SDK to an uninitialized state.
+  ///
+  /// This clears all client instances and requires initialize() to be called
+  /// again before using any other methods. Useful for testing or when switching users.
+  ///
+  /// Example:
+  /// ```dart
+  /// // When app restarts or needs complete reset
   /// Eppo.reset();
   /// ```
   static void reset() {
     _instance = null;
+    _instances.clear();
+    _sharedSdkKey = null;
+    _sharedClientConfiguration = null;
+  }
+}
+
+/// A wrapper around EppoPrecomputedClient for subject-specific flag evaluations.
+///
+/// This class provides the same flag evaluation methods as the main Eppo class,
+/// but for a specific subject. Instances are created via `Eppo.forSubject()`.
+class EppoInstance {
+  final EppoPrecomputedClient _client;
+
+  /// Private constructor - instances should be created via Eppo.forSubject()
+  EppoInstance._(this._client);
+
+  /// Gets a string assignment for the specified flag.
+  ///
+  /// Parameters:
+  /// - [flagKey]: The unique identifier for the feature flag.
+  /// - [defaultValue]: The value to return if the flag is not found or an error occurs.
+  ///
+  /// Returns the assigned string value or the default value if the flag is not found.
+  String getStringAssignment(String flagKey, String defaultValue) {
+    return _client.getStringAssignment(flagKey, defaultValue);
+  }
+
+  /// Gets a boolean assignment for the specified flag.
+  ///
+  /// Parameters:
+  /// - [flagKey]: The unique identifier for the feature flag.
+  /// - [defaultValue]: The value to return if the flag is not found or an error occurs.
+  ///
+  /// Returns the assigned boolean value or the default value if the flag is not found.
+  bool getBooleanAssignment(String flagKey, bool defaultValue) {
+    return _client.getBooleanAssignment(flagKey, defaultValue);
+  }
+
+  /// Gets an integer assignment for the specified flag.
+  ///
+  /// Parameters:
+  /// - [flagKey]: The unique identifier for the feature flag.
+  /// - [defaultValue]: The value to return if the flag is not found or an error occurs.
+  ///
+  /// Returns the assigned integer value or the default value if the flag is not found.
+  int getIntegerAssignment(String flagKey, int defaultValue) {
+    return _client.getIntegerAssignment(flagKey, defaultValue);
+  }
+
+  /// Gets a numeric (double) assignment for the specified flag.
+  ///
+  /// Parameters:
+  /// - [flagKey]: The unique identifier for the feature flag.
+  /// - [defaultValue]: The value to return if the flag is not found or an error occurs.
+  ///
+  /// Returns the assigned numeric value or the default value if the flag is not found.
+  double getNumericAssignment(String flagKey, double defaultValue) {
+    return _client.getNumericAssignment(flagKey, defaultValue);
+  }
+
+  /// Gets a JSON assignment for the specified flag.
+  ///
+  /// Parameters:
+  /// - [flagKey]: The unique identifier for the feature flag.
+  /// - [defaultValue]: The value to return if the flag is not found or an error occurs.
+  ///
+  /// Returns the assigned JSON object or the default value if the flag is not found.
+  Map<String, dynamic> getJSONAssignment(
+      String flagKey, Map<String, dynamic> defaultValue) {
+    return _client.getJSONAssignment(flagKey, defaultValue);
+  }
+
+  /// Gets a bandit action for the specified flag.
+  ///
+  /// Bandit algorithms dynamically select the best action based on performance.
+  ///
+  /// Parameters:
+  /// - [flagKey]: The unique identifier for the feature flag.
+  /// - [defaultValue]: The value to return if the flag is not found or an error occurs.
+  ///
+  /// Returns a BanditEvaluation containing the selected action and variation,
+  /// or a default evaluation if the flag is not found.
+  BanditEvaluation getBanditAction(String flagKey, String defaultValue) {
+    return _client.getBanditAction(flagKey, defaultValue);
   }
 }
