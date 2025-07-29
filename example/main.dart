@@ -39,12 +39,12 @@ void main(List<String> args) async {
     assignmentLogger: MyAssignmentLogger(),
   );
 
-  print('🚀 Eppo SDK Multi-Instance Example');
-  print('===================================');
+  print('Eppo SDK Multi-Instance Example');
+  print('=================================');
 
-  // === PART 1: SINGLETON API (Traditional Usage) ===
-  print('\n📱 Part 1: Singleton API');
-  print('-------------------------');
+  // === 1️⃣ SINGLETON API (Traditional Usage) ===
+  print('\n1️⃣ Singleton API');
+  print('----------------');
   
   // Initialize with a logged-in user
   final loggedInUser = Subject(
@@ -67,9 +67,9 @@ void main(List<String> args) async {
   final premiumFeature = Eppo.getBooleanAssignment('premium-feature', false);
   print('   Premium feature enabled: $premiumFeature');
 
-  // === PART 2: MULTI-INSTANCE API ===
-  print('\n👥 Part 2: Multi-Instance API');
-  print('------------------------------');
+  // === 2️⃣ MULTI-INSTANCE API ===
+  print('\n2️⃣ Multi-Instance API');
+  print('---------------------');
 
   // Create instance for anonymous user
   final anonymousUser = await Eppo.forSubject(
@@ -104,9 +104,9 @@ void main(List<String> args) async {
   );
   print('✅ Created second user instance');
 
-  // === PART 3: DEMONSTRATE DIFFERENT EVALUATIONS ===
-  print('\n🔍 Part 3: Flag Evaluations Per User');
-  print('------------------------------------');
+  // === 3️⃣ FLAG EVALUATIONS PER USER ===
+  print('\n3️⃣ Flag Evaluations Per User');
+  print('----------------------------');
 
   // Anonymous user evaluations
   final anonPremium = anonymousUser.getBooleanAssignment('premium-feature', false);
@@ -124,9 +124,9 @@ void main(List<String> args) async {
   print('   Premium feature: $otherPremium');
   print('   Show signup banner: $otherSignupBanner');
 
-  // === PART 4: DEMONSTRATE SINGLETON + MULTI-INSTANCE COEXISTENCE ===
-  print('\n🔗 Part 4: API Coexistence');
-  print('--------------------------');
+  // === API COEXISTENCE ===
+  print('\nAPI Coexistence:');
+  print('----------------');
 
   // Singleton API still works
   final singletonResult = Eppo.getBooleanAssignment('premium-feature', false);
@@ -136,11 +136,11 @@ void main(List<String> args) async {
   final sameAssingleton = await Eppo.forSubject(subjectKey);
   final instanceResult = sameAssingleton.getBooleanAssignment('premium-feature', false);
   print('Multi-instance API (same subject): $instanceResult');
-  print('Results match: ${singletonResult == instanceResult}');
+  print('✅ Results match: ${singletonResult == instanceResult}');
 
-  // === PART 5: INSTANCE MANAGEMENT ===
-  print('\n📊 Part 5: Instance Management');
-  print('------------------------------');
+  // === INSTANCE MANAGEMENT ===
+  print('\nInstance Management:');
+  print('-------------------');
 
   print('Active subjects: ${Eppo.activeSubjects}');
   print('Total instances: ${Eppo.activeSubjects.length}');
@@ -150,9 +150,9 @@ void main(List<String> args) async {
   Eppo.removeSubject('anonymous-session-abc123');
   print('Active subjects after cleanup: ${Eppo.activeSubjects}');
 
-  // === PART 6: USER STATE TRANSITION EXAMPLE ===
-  print('\n🔄 Part 6: User State Transition');
-  print('---------------------------------');
+  // === USER STATE TRANSITION ===
+  print('\nUser State Transition:');
+  print('---------------------');
 
   // Simulate user login flow
   print('Simulating anonymous → logged-in user transition...');
@@ -179,7 +179,7 @@ void main(List<String> args) async {
   final afterLogin = newLoggedInUser.getBooleanAssignment('premium-feature', false);
   print('After login - premium feature: $afterLogin');
 
-  print('\n✨ Example completed successfully!');
+  print('\n✅ Example completed successfully!');
   print('Final active subjects: ${Eppo.activeSubjects}');
   
   exit(0);

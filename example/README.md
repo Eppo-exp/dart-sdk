@@ -143,24 +143,24 @@ print('bandit-flag: action=${banditValue.action} variation=${banditValue.variati
 
 ## Example Output Structure
 
-When run successfully, you'll see a comprehensive demonstration organized into 7 parts:
+When run successfully, you'll see a comprehensive demonstration:
 
 ```
-🚀 Eppo SDK Multi-Instance Example
-===================================
+Eppo SDK Multi-Instance Example
+=================================
 
-📱 Part 1: Singleton API
--------------------------
+1️⃣ Singleton API
+----------------
 ✅ Initialized SDK for logged-in user: user-123
    Premium feature enabled: true
 
-👥 Part 2: Multi-Instance API
-------------------------------
+2️⃣ Multi-Instance API
+---------------------
 ✅ Created anonymous user instance
 ✅ Created second user instance
 
-🔍 Part 3: Flag Evaluations Per User
-------------------------------------
+3️⃣ Flag Evaluations Per User
+----------------------------
 Anonymous user flags:
    Premium feature: false
    Show signup banner: false
@@ -169,27 +169,27 @@ Second user flags:
    Premium feature: false
    Show signup banner: false
 
-🔗 Part 4: API Coexistence
---------------------------
+API Coexistence:
+----------------
 Singleton API result: true
 Multi-instance API (same subject): true
-Results match: true
+✅ Results match: true
 
-📊 Part 5: Instance Management
-------------------------------
+Instance Management:
+-------------------
 Active subjects: [user-123, anonymous-session-abc123, user-456]
 Total instances: 3
 
 Cleaning up anonymous user...
 Active subjects after cleanup: [user-123, user-456]
 
-🔄 Part 6: User State Transition
----------------------------------
+User State Transition:
+---------------------
 Simulating anonymous → logged-in user transition...
 Before login - signup banner: false
 After login - premium feature: true
 
-✨ Example completed successfully!
+✅ Example completed successfully!
 Final active subjects: [user-123, user-456, user-789]
 ```
 
