@@ -234,6 +234,11 @@ loggedInUser.getBooleanAssignment('feature-a', false);  // Different subject, di
 - Cache persists until `Eppo.removeSubject(subjectKey)` or `Eppo.reset()` is called
 - Each cache is isolated - removing one subject doesn't affect others
 
+**Immediate Availability:**
+- Client instances are stored in the registry immediately upon creation
+- Flag evaluations work right away (returning defaults until flag data loads)
+- Background flag fetching doesn't block access to the client
+
 **Memory Management:**
 ```dart
 // Clean up specific subject's cache when user logs out

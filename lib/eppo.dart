@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'src/precompute_client.dart';
 import 'src/subject.dart';
 export 'src/assignment_cache.dart'
@@ -16,20 +17,24 @@ class Eppo {
   // Private constructor to prevent direct instantiation
   Eppo._();
 
-  // Singleton instance of the client (for backward compatibility)
-  static EppoPrecomputedClient? _instance;
-
   // Registry of client instances by subject key
   static final Map<String, EppoPrecomputedClient> _instances = {};
+
+  // Simple mutex for thread-safe access
+  static Future<void>? _lock;
 
   // Configuration shared across instances
   static String? _sharedSdkKey;
   static ClientConfiguration? _sharedClientConfiguration;
+  
+  // Track the current singleton subject key for backwards compatibility
+  static String? _singletonSubjectKey;
 
   /// Gets the current client instance.
   ///
   /// Returns null if the SDK has not been initialized.
-  static EppoPrecomputedClient? get instance => _instance;
+  static EppoPrecomputedClient? get instance => 
+      _singletonSubjectKey != null ? _instances[_singletonSubjectKey] : null;
 
   /// Initializes the Eppo SDK with the provided configuration.
   ///
@@ -65,12 +70,16 @@ class Eppo {
     // Store shared configuration for multi-instance support
     _sharedSdkKey = sdkKey;
     _sharedClientConfiguration = clientConfiguration;
-
-    // Always create a new instance, replacing any existing one
-    _instance =
-        EppoPrecomputedClient(sdkKey, subjectEvaluation, clientConfiguration);
-
-    await _instance!.fetchPrecomputedFlags();
+    
+    final subjectKey = subjectEvaluation.subject.subjectKey;
+    
+    // Create and store the singleton instance immediately
+    final client = EppoPrecomputedClient(sdkKey, subjectEvaluation, clientConfiguration);
+    _instances[subjectKey] = client;
+    _singletonSubjectKey = subjectKey;
+    
+    // Fetch flags in background (client is already available for use)
+    await client.fetchPrecomputedFlags();
   }
 
   /// Gets a string assignment for the specified flag.
@@ -86,7 +95,7 @@ class Eppo {
   /// String buttonText = Eppo.getStringAssignment('button-text-flag', 'Click me');
   /// ```
   static String getStringAssignment(String flagKey, String defaultValue) {
-    return _instance?.getStringAssignment(flagKey, defaultValue) ??
+    return instance?.getStringAssignment(flagKey, defaultValue) ??
         defaultValue;
   }
 
@@ -103,7 +112,7 @@ class Eppo {
   /// bool showFeature = Eppo.getBooleanAssignment('show-new-feature', false);
   /// ```
   static bool getBooleanAssignment(String flagKey, bool defaultValue) {
-    return _instance?.getBooleanAssignment(flagKey, defaultValue) ??
+    return instance?.getBooleanAssignment(flagKey, defaultValue) ??
         defaultValue;
   }
 
@@ -120,7 +129,7 @@ class Eppo {
   /// int maxItems = Eppo.getIntegerAssignment('max-items-flag', 10);
   /// ```
   static int getIntegerAssignment(String flagKey, int defaultValue) {
-    return _instance?.getIntegerAssignment(flagKey, defaultValue) ??
+    return instance?.getIntegerAssignment(flagKey, defaultValue) ??
         defaultValue;
   }
 
@@ -137,7 +146,7 @@ class Eppo {
   /// double discountRate = Eppo.getNumericAssignment('discount-rate', 0.1);
   /// ```
   static double getNumericAssignment(String flagKey, double defaultValue) {
-    return _instance?.getNumericAssignment(flagKey, defaultValue) ??
+    return instance?.getNumericAssignment(flagKey, defaultValue) ??
         defaultValue;
   }
 
@@ -158,7 +167,7 @@ class Eppo {
   /// ```
   static Map<String, dynamic> getJSONAssignment(
       String flagKey, Map<String, dynamic> defaultValue) {
-    return _instance?.getJSONAssignment(flagKey, defaultValue) ?? defaultValue;
+    return instance?.getJSONAssignment(flagKey, defaultValue) ?? defaultValue;
   }
 
   /// Gets a bandit action for the specified flag.
@@ -179,7 +188,7 @@ class Eppo {
   /// String? action = result.action;
   /// ```
   static BanditEvaluation getBanditAction(String flagKey, String defaultValue) {
-    return _instance?.getBanditAction(flagKey, defaultValue) ??
+    return instance?.getBanditAction(flagKey, defaultValue) ??
         BanditEvaluation(variation: defaultValue, action: null);
   }
 
@@ -221,32 +230,55 @@ class Eppo {
           'SDK not initialized. Call Eppo.initialize() first.');
     }
 
-    // Check if we already have an instance for this subject
-    if (_instances.containsKey(subjectKey)) {
-      return EppoInstance._(_instances[subjectKey]!);
+    return await _withLock(() async {
+      // Check if we already have an instance for this subject (including singleton)
+      if (_instances.containsKey(subjectKey)) {
+        return EppoInstance._(_instances[subjectKey]!);
+      }
+
+      // Create new instance for this subject
+      final subjectEvaluation = SubjectEvaluation(
+        subject: Subject(
+          subjectKey: subjectKey,
+          subjectAttributes: subjectAttributes,
+        ),
+        banditActions: banditActions,
+      );
+
+      final client = EppoPrecomputedClient(
+        _sharedSdkKey!,
+        subjectEvaluation,
+        _sharedClientConfiguration!,
+      );
+
+      // Store the instance immediately so it's available for use
+      _instances[subjectKey] = client;
+
+      // Fetch flags in background (client is already available for flag evaluations)
+      await client.fetchPrecomputedFlags();
+
+      return EppoInstance._(client);
+    });
+  }
+
+  /// Executes the given function with a lock to ensure thread safety
+  static Future<T> _withLock<T>(Future<T> Function() fn) async {
+    // Wait for any existing lock
+    while (_lock != null) {
+      await _lock;
     }
 
-    // Create new instance for this subject
-    final subjectEvaluation = SubjectEvaluation(
-      subject: Subject(
-        subjectKey: subjectKey,
-        subjectAttributes: subjectAttributes,
-      ),
-      banditActions: banditActions,
-    );
+    // Create our lock
+    final completer = Completer<void>();
+    _lock = completer.future;
 
-    final client = EppoPrecomputedClient(
-      _sharedSdkKey!,
-      subjectEvaluation,
-      _sharedClientConfiguration!,
-    );
-
-    await client.fetchPrecomputedFlags();
-
-    // Store the instance
-    _instances[subjectKey] = client;
-
-    return EppoInstance._(client);
+    try {
+      return await fn();
+    } finally {
+      // Release the lock
+      _lock = null;
+      completer.complete();
+    }
   }
 
   /// Removes an SDK instance for a specific subject key.
@@ -263,6 +295,10 @@ class Eppo {
   /// ```
   static void removeSubject(String subjectKey) {
     _instances.remove(subjectKey);
+    // If this was the singleton subject, clear the singleton reference
+    if (_singletonSubjectKey == subjectKey) {
+      _singletonSubjectKey = null;
+    }
   }
 
   /// Gets all active subject keys that have SDK instances.
@@ -281,10 +317,10 @@ class Eppo {
   /// Eppo.reset();
   /// ```
   static void reset() {
-    _instance = null;
     _instances.clear();
     _sharedSdkKey = null;
     _sharedClientConfiguration = null;
+    _singletonSubjectKey = null;
   }
 }
 
