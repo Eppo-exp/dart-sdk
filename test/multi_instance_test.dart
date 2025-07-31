@@ -27,7 +27,7 @@ void main() {
 
       // Should not throw
       final instance = await Eppo.forSubject('test-user');
-      expect(instance, isA<EppoInstance>());
+      expect(instance, isA<EppoPrecomputedClient>());
     });
 
     test('multiple subjects can have separate instances', () async {
@@ -43,8 +43,8 @@ void main() {
       final user1 = await Eppo.forSubject('user-1');
       final user2 = await Eppo.forSubject('user-2');
 
-      expect(user1, isA<EppoInstance>());
-      expect(user2, isA<EppoInstance>());
+      expect(user1, isA<EppoPrecomputedClient>());
+      expect(user2, isA<EppoPrecomputedClient>());
       expect(Eppo.activeSubjects.length, 3); // initial-user + user-1 + user-2
       expect(Eppo.activeSubjects, contains('initial-user'));
       expect(Eppo.activeSubjects, contains('user-1'));
@@ -105,7 +105,7 @@ void main() {
       expect(Eppo.activeSubjects.length, 0);
     });
 
-    test('EppoInstance provides all flag evaluation methods', () async {
+    test('EppoPrecomputedClient provides all flag evaluation methods', () async {
       // Initialize the SDK first
       await Eppo.initialize(
         'test-sdk-key',
@@ -144,7 +144,7 @@ void main() {
       
       // Getting an instance for the same subject should return the same client
       final sameSubjectInstance = await Eppo.forSubject('singleton-user');
-      expect(sameSubjectInstance, isA<EppoInstance>());
+      expect(sameSubjectInstance, isA<EppoPrecomputedClient>());
       
       // Should only have one instance total
       expect(Eppo.activeSubjects.length, 1);
@@ -167,7 +167,7 @@ void main() {
       );
 
       // Make multiple concurrent calls for the same subject
-      final futures = <Future<EppoInstance>>[];
+      final futures = <Future<EppoPrecomputedClient>>[];
       for (int i = 0; i < 5; i++) {
         futures.add(Eppo.forSubject('concurrent-user'));
       }
@@ -183,7 +183,7 @@ void main() {
       // All returned instances should be for the same underlying client
       expect(instances.length, 5);
       for (final instance in instances) {
-        expect(instance, isA<EppoInstance>());
+        expect(instance, isA<EppoPrecomputedClient>());
       }
     });
 
@@ -210,7 +210,7 @@ void main() {
       
       // Complete the creation
       final instance = await futureInstance;
-      expect(instance, isA<EppoInstance>());
+      expect(instance, isA<EppoPrecomputedClient>());
       
       // Should still be there after completion
       expect(Eppo.activeSubjects, contains('new-user'));
@@ -233,7 +233,7 @@ void main() {
 
       // 3. Use forSubject with same subject key as singleton
       final sameUserInstance = await Eppo.forSubject('user-123');
-      expect(sameUserInstance, isA<EppoInstance>());
+      expect(sameUserInstance, isA<EppoPrecomputedClient>());
       
       // Should return same results as singleton (same underlying client)
       String instanceResult = sameUserInstance.getStringAssignment('test-flag', 'default');
@@ -241,7 +241,7 @@ void main() {
 
       // 4. Use forSubject with different subject key
       final otherUserInstance = await Eppo.forSubject('user-456');
-      expect(otherUserInstance, isA<EppoInstance>());
+      expect(otherUserInstance, isA<EppoPrecomputedClient>());
 
       // 5. Verify storage
       expect(Eppo.activeSubjects.length, 2);

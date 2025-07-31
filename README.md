@@ -150,7 +150,7 @@ Handle transitions between anonymous and logged-in states:
 
 ```dart
 class UserSessionManager {
-  EppoInstance? _currentUserInstance;
+  EppoPrecomputedClient? _currentUserInstance;
   
   // When user is anonymous
   Future<void> initializeAnonymousUser(String sessionId) async {
@@ -205,7 +205,7 @@ class UserSessionManager {
   }
   
   // Get current user instance
-  EppoInstance? getCurrentUserInstance() => _currentUserInstance;
+  EppoPrecomputedClient? getCurrentUserInstance() => _currentUserInstance;
 }
 ```
 

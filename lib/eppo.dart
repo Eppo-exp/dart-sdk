@@ -5,7 +5,7 @@ export 'src/assignment_cache.dart'
     show AssignmentCache, InMemoryAssignmentCache, NoOpAssignmentCache;
 export 'src/assignment_logger.dart' show AssignmentLogger, AssignmentEvent;
 export 'src/bandit_logger.dart' show BanditLogger, BanditEvent;
-export 'src/precompute_client.dart' show ClientConfiguration, BanditEvaluation;
+export 'src/precompute_client.dart' show ClientConfiguration, BanditEvaluation, EppoPrecomputedClient;
 export 'src/subject.dart' show SubjectEvaluation, Subject, ContextAttributes;
 export 'src/sdk_version.dart' show SdkPlatform;
 
@@ -202,7 +202,7 @@ class Eppo {
   /// - [subjectAttributes]: Optional attributes for the subject.
   /// - [banditActions]: Optional bandit actions for the subject.
   ///
-  /// Returns an EppoInstance that provides flag evaluation methods for the specific subject.
+  /// Returns an EppoPrecomputedClient that provides flag evaluation methods for the specific subject.
   ///
   /// Example:
   /// ```dart
@@ -220,7 +220,7 @@ class Eppo {
   /// );
   /// bool showFeature = userEppo.getBooleanAssignment('show-feature', false);
   /// ```
-  static Future<EppoInstance> forSubject(
+  static Future<EppoPrecomputedClient> forSubject(
     String subjectKey, {
     ContextAttributes? subjectAttributes,
     Map<String, Map<String, Map<String, dynamic>>>? banditActions,
@@ -233,7 +233,7 @@ class Eppo {
     return await _withLock(() async {
       // Check if we already have an instance for this subject (including singleton)
       if (_instances.containsKey(subjectKey)) {
-        return EppoInstance._(_instances[subjectKey]!);
+        return _instances[subjectKey]!;
       }
 
       // Create new instance for this subject
@@ -257,7 +257,7 @@ class Eppo {
       // Fetch flags in background (client is already available for flag evaluations)
       await client.fetchPrecomputedFlags();
 
-      return EppoInstance._(client);
+      return client;
     });
   }
 
@@ -324,83 +324,3 @@ class Eppo {
   }
 }
 
-/// A wrapper around EppoPrecomputedClient for subject-specific flag evaluations.
-///
-/// This class provides the same flag evaluation methods as the main Eppo class,
-/// but for a specific subject. Instances are created via `Eppo.forSubject()`.
-class EppoInstance {
-  final EppoPrecomputedClient _client;
-
-  /// Private constructor - instances should be created via Eppo.forSubject()
-  EppoInstance._(this._client);
-
-  /// Gets a string assignment for the specified flag.
-  ///
-  /// Parameters:
-  /// - [flagKey]: The unique identifier for the feature flag.
-  /// - [defaultValue]: The value to return if the flag is not found or an error occurs.
-  ///
-  /// Returns the assigned string value or the default value if the flag is not found.
-  String getStringAssignment(String flagKey, String defaultValue) {
-    return _client.getStringAssignment(flagKey, defaultValue);
-  }
-
-  /// Gets a boolean assignment for the specified flag.
-  ///
-  /// Parameters:
-  /// - [flagKey]: The unique identifier for the feature flag.
-  /// - [defaultValue]: The value to return if the flag is not found or an error occurs.
-  ///
-  /// Returns the assigned boolean value or the default value if the flag is not found.
-  bool getBooleanAssignment(String flagKey, bool defaultValue) {
-    return _client.getBooleanAssignment(flagKey, defaultValue);
-  }
-
-  /// Gets an integer assignment for the specified flag.
-  ///
-  /// Parameters:
-  /// - [flagKey]: The unique identifier for the feature flag.
-  /// - [defaultValue]: The value to return if the flag is not found or an error occurs.
-  ///
-  /// Returns the assigned integer value or the default value if the flag is not found.
-  int getIntegerAssignment(String flagKey, int defaultValue) {
-    return _client.getIntegerAssignment(flagKey, defaultValue);
-  }
-
-  /// Gets a numeric (double) assignment for the specified flag.
-  ///
-  /// Parameters:
-  /// - [flagKey]: The unique identifier for the feature flag.
-  /// - [defaultValue]: The value to return if the flag is not found or an error occurs.
-  ///
-  /// Returns the assigned numeric value or the default value if the flag is not found.
-  double getNumericAssignment(String flagKey, double defaultValue) {
-    return _client.getNumericAssignment(flagKey, defaultValue);
-  }
-
-  /// Gets a JSON assignment for the specified flag.
-  ///
-  /// Parameters:
-  /// - [flagKey]: The unique identifier for the feature flag.
-  /// - [defaultValue]: The value to return if the flag is not found or an error occurs.
-  ///
-  /// Returns the assigned JSON object or the default value if the flag is not found.
-  Map<String, dynamic> getJSONAssignment(
-      String flagKey, Map<String, dynamic> defaultValue) {
-    return _client.getJSONAssignment(flagKey, defaultValue);
-  }
-
-  /// Gets a bandit action for the specified flag.
-  ///
-  /// Bandit algorithms dynamically select the best action based on performance.
-  ///
-  /// Parameters:
-  /// - [flagKey]: The unique identifier for the feature flag.
-  /// - [defaultValue]: The value to return if the flag is not found or an error occurs.
-  ///
-  /// Returns a BanditEvaluation containing the selected action and variation,
-  /// or a default evaluation if the flag is not found.
-  BanditEvaluation getBanditAction(String flagKey, String defaultValue) {
-    return _client.getBanditAction(flagKey, defaultValue);
-  }
-}

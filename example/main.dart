@@ -72,7 +72,7 @@ void main(List<String> args) async {
   print('---------------------');
 
   // Create instance for anonymous user
-  final anonymousUser = await Eppo.forSubject(
+  final EppoPrecomputedClient anonymousUser = await Eppo.forSubject(
     'anonymous-session-abc123',
     subjectAttributes: ContextAttributes(
       categoricalAttributes: {
