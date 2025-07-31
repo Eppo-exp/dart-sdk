@@ -73,33 +73,41 @@ void main(List<String> args) async {
 
   // Create instance for anonymous user
   final EppoPrecomputedClient anonymousUser = await Eppo.forSubject(
-    'anonymous-session-abc123',
-    subjectAttributes: ContextAttributes(
-      categoricalAttributes: {
-        'user_type': 'anonymous',
-        'device': 'mobile',
-        'platform': 'dart',
-        'referrer_source': 'organic',
-      },
-      numericAttributes: {
-        'session_count': 1,
-        'days_since_install': 0,
-      },
+    SubjectEvaluation(
+      subject: Subject(
+        subjectKey: 'anonymous-session-abc123',
+        subjectAttributes: ContextAttributes(
+          categoricalAttributes: {
+            'user_type': 'anonymous',
+            'device': 'mobile',
+            'platform': 'dart',
+            'referrer_source': 'organic',
+          },
+          numericAttributes: {
+            'session_count': 1,
+            'days_since_install': 0,
+          },
+        ),
+      ),
     ),
   );
   print('✅ Created anonymous user instance');
 
   // Create instance for different logged-in user
   final otherUser = await Eppo.forSubject(
-    'user-456',
-    subjectAttributes: ContextAttributes(
-      categoricalAttributes: {
-        'user_type': 'authenticated',
-        'subscription_plan': 'free',
-        'country': 'CA',
-        'device': 'desktop',
-      },
-      numericAttributes: {'age': 25, 'account_age_days': 45},
+    SubjectEvaluation(
+      subject: Subject(
+        subjectKey: 'user-456',
+        subjectAttributes: ContextAttributes(
+          categoricalAttributes: {
+            'user_type': 'authenticated',
+            'subscription_plan': 'free',
+            'country': 'CA',
+            'device': 'desktop',
+          },
+          numericAttributes: {'age': 25, 'account_age_days': 45},
+        ),
+      ),
     ),
   );
   print('✅ Created second user instance');
@@ -133,7 +141,9 @@ void main(List<String> args) async {
   print('Singleton API result: $singletonResult');
 
   // Same subject as singleton returns same client
-  final sameAssingleton = await Eppo.forSubject(subjectKey);
+  final sameAssingleton = await Eppo.forSubject(
+    SubjectEvaluation(subject: Subject(subjectKey: subjectKey)),
+  );
   final instanceResult = sameAssingleton.getBooleanAssignment('premium-feature', false);
   print('Multi-instance API (same subject): $instanceResult');
   print('✅ Results match: ${singletonResult == instanceResult}');
@@ -158,21 +168,27 @@ void main(List<String> args) async {
   print('Simulating anonymous → logged-in user transition...');
   
   // 1. Start with anonymous user
-  final tempAnonymous = await Eppo.forSubject('temp-anonymous-xyz');
+  final tempAnonymous = await Eppo.forSubject(
+    SubjectEvaluation(subject: Subject(subjectKey: 'temp-anonymous-xyz')),
+  );
   final beforeLogin = tempAnonymous.getBooleanAssignment('signup-banner', false);
   print('Before login - signup banner: $beforeLogin');
 
   // 2. User logs in - clean up anonymous, create authenticated
   Eppo.removeSubject('temp-anonymous-xyz');
   final newLoggedInUser = await Eppo.forSubject(
-    'user-789',
-    subjectAttributes: ContextAttributes(
-      categoricalAttributes: {
-        'user_type': 'authenticated',
-        'subscription_plan': 'premium',
-        'country': 'US',
-      },
-      numericAttributes: {'age': 28, 'account_age_days': 1}, // New user
+    SubjectEvaluation(
+      subject: Subject(
+        subjectKey: 'user-789',
+        subjectAttributes: ContextAttributes(
+          categoricalAttributes: {
+            'user_type': 'authenticated',
+            'subscription_plan': 'premium',
+            'country': 'US',
+          },
+          numericAttributes: {'age': 28, 'account_age_days': 1}, // New user
+        ),
+      ),
     ),
   );
   

@@ -43,13 +43,12 @@ final String variation = Eppo.getStringAssignment(
 );
 
 // Render different components based on assignment
-switch(variation) {
-  case 'variant-a':
-    return renderHomepageVariantA();
-  case 'variant-b':
-    return renderHomepageVariantB();
-  default:
-    return renderHomepageControl();
+if (variation == 'variant-a') {
+  print('Showing homepage variant A');
+} else if (variation == 'variant-b') {
+  print('Showing homepage variant B');
+} else {
+  print('Showing homepage control');
 }
 ```
 
@@ -81,20 +80,24 @@ For users who haven't logged in yet, use anonymous identifiers with basic device
 ```dart
 // Create instance for anonymous user
 final anonymousUser = await Eppo.forSubject(
-  'anonymous-${generateSessionId()}', // e.g., 'anonymous-abc123def'
-  subjectAttributes: ContextAttributes(
-    categoricalAttributes: {
-      'user_type': 'anonymous',
-      'device_type': 'mobile',
-      'platform': 'ios',
-      'country': 'US',
-      'referrer_source': 'google',
-      'app_version': '2.1.0',
-    },
-    numericAttributes: {
-      'session_count': 1,
-      'days_since_install': 0,
-    },
+  SubjectEvaluation(
+    subject: Subject(
+      subjectKey: 'anonymous-abc123def', // Use session ID
+      subjectAttributes: ContextAttributes(
+        categoricalAttributes: {
+          'user_type': 'anonymous',
+          'device_type': 'mobile',
+          'platform': 'ios',
+          'country': 'US',
+          'referrer_source': 'google',
+          'app_version': '2.1.0',
+        },
+        numericAttributes: {
+          'session_count': 1,
+          'days_since_install': 0,
+        },
+      ),
+    ),
   ),
 );
 
@@ -111,25 +114,29 @@ For authenticated users, use their user ID with rich user attributes:
 ```dart
 // Create instance for authenticated user
 final loggedInUser = await Eppo.forSubject(
-  'user-${userId}', // e.g., 'user-12345'
-  subjectAttributes: ContextAttributes(
-    categoricalAttributes: {
-      'user_type': 'authenticated',
-      'subscription_plan': 'premium',
-      'user_segment': 'power_user',
-      'country': 'US',
-      'device_type': 'mobile',
-      'platform': 'ios',
-      'registration_source': 'organic',
-      'preferred_language': 'en',
-    },
-    numericAttributes: {
-      'age': 32,
-      'account_age_days': 245,
-      'lifetime_value': 299.99,
-      'monthly_sessions': 18,
-      'articles_read_last_30_days': 45,
-    },
+  SubjectEvaluation(
+    subject: Subject(
+      subjectKey: 'user-12345', // Use actual user ID
+      subjectAttributes: ContextAttributes(
+        categoricalAttributes: {
+          'user_type': 'authenticated',
+          'subscription_plan': 'premium',
+          'user_segment': 'power_user',
+          'country': 'US',
+          'device_type': 'mobile',
+          'platform': 'ios',
+          'registration_source': 'organic',
+          'preferred_language': 'en',
+        },
+        numericAttributes: {
+          'age': 32,
+          'account_age_days': 245,
+          'lifetime_value': 299.99,
+          'monthly_sessions': 18,
+          'articles_read_last_30_days': 45,
+        },
+      ),
+    ),
   ),
 );
 
@@ -149,22 +156,32 @@ String? specificContent = recommendation.action;
 Handle transitions between anonymous and logged-in states:
 
 ```dart
+import 'dart:io';
+import 'package:eppo/eppo.dart';
+
 class UserSessionManager {
   EppoPrecomputedClient? _currentUserInstance;
+  String? _currentSessionId;
+  String? _currentUserId;
   
   // When user is anonymous
   Future<void> initializeAnonymousUser(String sessionId) async {
+    _currentSessionId = sessionId;
     _currentUserInstance = await Eppo.forSubject(
-      'anonymous-$sessionId',
-      subjectAttributes: ContextAttributes(
-        categoricalAttributes: {
-          'user_type': 'anonymous',
-          'device_type': Platform.isIOS ? 'ios' : 'android',
-          'app_version': await getAppVersion(),
-        },
-        numericAttributes: {
-          'session_count': await getSessionCount(),
-        },
+      SubjectEvaluation(
+        subject: Subject(
+          subjectKey: 'anonymous-$sessionId',
+          subjectAttributes: ContextAttributes(
+            categoricalAttributes: {
+              'user_type': 'anonymous',
+              'device_type': Platform.isIOS ? 'ios' : 'android',
+              'app_version': '1.0.0', // Replace with actual app version
+            },
+            numericAttributes: {
+              'session_count': 1, // Replace with actual session count
+            },
+          ),
+        ),
       ),
     );
   }
@@ -172,36 +189,53 @@ class UserSessionManager {
   // When user logs in
   Future<void> loginUser(String userId, Map<String, dynamic> userProfile) async {
     // Clean up anonymous user instance
-    if (_currentUserInstance != null) {
-      Eppo.removeSubject('anonymous-${getCurrentSessionId()}');
+    if (_currentSessionId != null) {
+      Eppo.removeSubject('anonymous-$_currentSessionId');
     }
     
+    _currentUserId = userId;
     // Create authenticated user instance
     _currentUserInstance = await Eppo.forSubject(
-      'user-$userId',
-      subjectAttributes: ContextAttributes(
-        categoricalAttributes: {
-          'user_type': 'authenticated',
-          'subscription_plan': userProfile['plan'] ?? 'free',
-          'user_segment': userProfile['segment'] ?? 'regular',
-          'country': userProfile['country'] ?? 'unknown',
-        },
-        numericAttributes: {
-          'age': userProfile['age'] ?? 0,
-          'account_age_days': calculateAccountAge(userProfile['created_at']),
-          'lifetime_value': userProfile['ltv'] ?? 0.0,
-        },
+      SubjectEvaluation(
+        subject: Subject(
+          subjectKey: 'user-$userId',
+          subjectAttributes: ContextAttributes(
+            categoricalAttributes: {
+              'user_type': 'authenticated',
+              'subscription_plan': userProfile['plan'] ?? 'free',
+              'user_segment': userProfile['segment'] ?? 'regular',
+              'country': userProfile['country'] ?? 'unknown',
+            },
+            numericAttributes: {
+              'age': userProfile['age'] ?? 0,
+              'account_age_days': _calculateAccountAge(userProfile['created_at']),
+              'lifetime_value': userProfile['ltv'] ?? 0.0,
+            },
+          ),
+        ),
       ),
     );
   }
   
   // When user logs out
   Future<void> logoutUser() async {
-    if (_currentUserInstance != null) {
-      Eppo.removeSubject('user-${getCurrentUserId()}');
+    if (_currentUserId != null) {
+      Eppo.removeSubject('user-$_currentUserId');
+      _currentUserId = null;
       // Optionally initialize new anonymous session
-      await initializeAnonymousUser(generateNewSessionId());
+      await initializeAnonymousUser(_generateNewSessionId());
     }
+  }
+  
+  // Helper methods
+  int _calculateAccountAge(String? createdAt) {
+    if (createdAt == null) return 0;
+    final created = DateTime.parse(createdAt);
+    return DateTime.now().difference(created).inDays;
+  }
+  
+  String _generateNewSessionId() {
+    return DateTime.now().millisecondsSinceEpoch.toString();
   }
   
   // Get current user instance
@@ -219,8 +253,12 @@ Each subject instance maintains its own isolated cache for flag assignments and 
 
 ```dart
 // Each subject gets its own cache
-final anonymousUser = await Eppo.forSubject('anonymous-123');
-final loggedInUser = await Eppo.forSubject('user-456');
+final anonymousUser = await Eppo.forSubject(
+  SubjectEvaluation(subject: Subject(subjectKey: 'anonymous-123')),
+);
+final loggedInUser = await Eppo.forSubject(
+  SubjectEvaluation(subject: Subject(subjectKey: 'user-456')),
+);
 
 // These calls will be cached separately per subject
 anonymousUser.getBooleanAssignment('feature-a', false); // First call: evaluated + cached

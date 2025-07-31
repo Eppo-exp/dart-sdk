@@ -200,18 +200,26 @@ Final active subjects: [user-123, user-456, user-789]
 ```dart
 // Create instances for different users
 final anonymousUser = await Eppo.forSubject(
-  'anonymous-session-123',
-  subjectAttributes: ContextAttributes(
-    categoricalAttributes: {'user_type': 'anonymous'},
-    numericAttributes: {'session_count': 1},
+  SubjectEvaluation(
+    subject: Subject(
+      subjectKey: 'anonymous-session-123',
+      subjectAttributes: ContextAttributes(
+        categoricalAttributes: {'user_type': 'anonymous'},
+        numericAttributes: {'session_count': 1},
+      ),
+    ),
   ),
 );
 
 final loggedInUser = await Eppo.forSubject(
-  'user-456',
-  subjectAttributes: ContextAttributes(
-    categoricalAttributes: {'user_type': 'authenticated', 'plan': 'premium'},
-    numericAttributes: {'age': 30, 'account_age_days': 180},
+  SubjectEvaluation(
+    subject: Subject(
+      subjectKey: 'user-456',
+      subjectAttributes: ContextAttributes(
+        categoricalAttributes: {'user_type': 'authenticated', 'plan': 'premium'},
+        numericAttributes: {'age': 30, 'account_age_days': 180},
+      ),
+    ),
   ),
 );
 

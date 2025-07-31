@@ -10,7 +10,11 @@ void main() {
 
     test('forSubject throws StateError when not initialized', () async {
       expect(
-        () async => await Eppo.forSubject('test-user'),
+        () async => await Eppo.forSubject(
+          SubjectEvaluation(
+            subject: Subject(subjectKey: 'test-user'),
+          ),
+        ),
         throwsA(isA<StateError>()),
       );
     });
@@ -26,7 +30,11 @@ void main() {
       );
 
       // Should not throw
-      final instance = await Eppo.forSubject('test-user');
+      final instance = await Eppo.forSubject(
+        SubjectEvaluation(
+          subject: Subject(subjectKey: 'test-user'),
+        ),
+      );
       expect(instance, isA<EppoPrecomputedClient>());
     });
 
@@ -40,8 +48,8 @@ void main() {
         ClientConfiguration(),
       );
 
-      final user1 = await Eppo.forSubject('user-1');
-      final user2 = await Eppo.forSubject('user-2');
+      final user1 = await Eppo.forSubject(SubjectEvaluation(subject: Subject(subjectKey: 'user-1')));
+      final user2 = await Eppo.forSubject(SubjectEvaluation(subject: Subject(subjectKey: 'user-2')));
 
       expect(user1, isA<EppoPrecomputedClient>());
       expect(user2, isA<EppoPrecomputedClient>());
@@ -61,8 +69,8 @@ void main() {
         ClientConfiguration(),
       );
 
-      await Eppo.forSubject('user-1');
-      await Eppo.forSubject('user-1'); // Second call should reuse existing instance
+      await Eppo.forSubject(SubjectEvaluation(subject: Subject(subjectKey: 'user-1')));
+      await Eppo.forSubject(SubjectEvaluation(subject: Subject(subjectKey: 'user-1'))); // Second call should reuse existing instance
 
       expect(Eppo.activeSubjects.length, 2); // initial-user + user-1
       expect(Eppo.activeSubjects, contains('initial-user'));
@@ -79,7 +87,7 @@ void main() {
         ClientConfiguration(),
       );
 
-      await Eppo.forSubject('user-1');
+      await Eppo.forSubject(SubjectEvaluation(subject: Subject(subjectKey: 'user-1')));
       expect(Eppo.activeSubjects.length, 2); // initial-user + user-1
 
       Eppo.removeSubject('user-1');
@@ -97,8 +105,8 @@ void main() {
         ClientConfiguration(),
       );
 
-      await Eppo.forSubject('user-1');
-      await Eppo.forSubject('user-2');
+      await Eppo.forSubject(SubjectEvaluation(subject: Subject(subjectKey: 'user-1')));
+      await Eppo.forSubject(SubjectEvaluation(subject: Subject(subjectKey: 'user-2')));
       expect(Eppo.activeSubjects.length, 3); // initial-user + user-1 + user-2
 
       Eppo.reset();
@@ -115,7 +123,7 @@ void main() {
         ClientConfiguration(),
       );
 
-      final instance = await Eppo.forSubject('test-user');
+      final instance = await Eppo.forSubject(SubjectEvaluation(subject: Subject(subjectKey: 'test-user')));
 
       // Test that all methods exist and return default values
       expect(instance.getStringAssignment('test-flag', 'default'), 'default');
@@ -143,7 +151,7 @@ void main() {
       expect(Eppo.instance, isNotNull);
       
       // Getting an instance for the same subject should return the same client
-      final sameSubjectInstance = await Eppo.forSubject('singleton-user');
+      final sameSubjectInstance = await Eppo.forSubject(SubjectEvaluation(subject: Subject(subjectKey: 'singleton-user')));
       expect(sameSubjectInstance, isA<EppoPrecomputedClient>());
       
       // Should only have one instance total
@@ -169,7 +177,7 @@ void main() {
       // Make multiple concurrent calls for the same subject
       final futures = <Future<EppoPrecomputedClient>>[];
       for (int i = 0; i < 5; i++) {
-        futures.add(Eppo.forSubject('concurrent-user'));
+        futures.add(Eppo.forSubject(SubjectEvaluation(subject: Subject(subjectKey: 'concurrent-user'))));
       }
 
       // Wait for all to complete
@@ -202,7 +210,7 @@ void main() {
       expect(Eppo.activeSubjects, contains('initial-user'));
 
       // Start creating a new subject instance
-      final futureInstance = Eppo.forSubject('new-user');
+      final futureInstance = Eppo.forSubject(SubjectEvaluation(subject: Subject(subjectKey: 'new-user')));
       
       // The subject should appear in activeSubjects immediately
       // (even though forSubject hasn't completed yet)
@@ -232,7 +240,7 @@ void main() {
       expect(singletonResult, 'default');
 
       // 3. Use forSubject with same subject key as singleton
-      final sameUserInstance = await Eppo.forSubject('user-123');
+      final sameUserInstance = await Eppo.forSubject(SubjectEvaluation(subject: Subject(subjectKey: 'user-123')));
       expect(sameUserInstance, isA<EppoPrecomputedClient>());
       
       // Should return same results as singleton (same underlying client)
@@ -240,7 +248,7 @@ void main() {
       expect(instanceResult, singletonResult);
 
       // 4. Use forSubject with different subject key
-      final otherUserInstance = await Eppo.forSubject('user-456');
+      final otherUserInstance = await Eppo.forSubject(SubjectEvaluation(subject: Subject(subjectKey: 'user-456')));
       expect(otherUserInstance, isA<EppoPrecomputedClient>());
 
       // 5. Verify storage

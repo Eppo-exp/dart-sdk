@@ -40,6 +40,13 @@ class Eppo {
   ///
   /// This must be called before any other Eppo methods.
   ///
+  /// NOTE: Future v2 API will separate SDK configuration from subject evaluation:
+  /// ```dart
+  /// // Proposed v2 API (sync configuration, no fetching)
+  /// Eppo.configure('sdk-key', ClientConfiguration());
+  /// final client = await Eppo.forSubject(subjectEvaluation);
+  /// ```
+  ///
   /// Parameters:
   /// - [sdkKey]: Your Eppo SDK key for authentication.
   /// - [subjectEvaluation]: Contains the subject information and optional bandit actions.
@@ -192,58 +199,53 @@ class Eppo {
         BanditEvaluation(variation: defaultValue, action: null);
   }
 
-  /// Gets or creates an SDK instance for a specific subject key.
+  /// Gets or creates an SDK instance for a specific subject.
   ///
   /// This allows you to have multiple SDK instances for different users,
   /// such as one for anonymous users and another for logged-in users.
   ///
   /// Parameters:
-  /// - [subjectKey]: The unique identifier for the subject (user).
-  /// - [subjectAttributes]: Optional attributes for the subject.
-  /// - [banditActions]: Optional bandit actions for the subject.
+  /// - [subjectEvaluation]: Contains the subject information and optional bandit actions.
   ///
   /// Returns an EppoPrecomputedClient that provides flag evaluation methods for the specific subject.
   ///
   /// Example:
   /// ```dart
   /// // For anonymous user
-  /// final anonymousEppo = await Eppo.forSubject('anonymous-123');
-  /// String feature = anonymousEppo.getStringAssignment('feature-flag', 'default');
-  ///
-  /// // For logged-in user
-  /// final userEppo = await Eppo.forSubject(
-  ///   'user-456',
-  ///   subjectAttributes: ContextAttributes(
-  ///     categoricalAttributes: {'country': 'US'},
-  ///     numericAttributes: {'age': 25},
+  /// final anonymousEppo = await Eppo.forSubject(
+  ///   SubjectEvaluation(
+  ///     subject: Subject(subjectKey: 'anonymous-123'),
   ///   ),
   /// );
-  /// bool showFeature = userEppo.getBooleanAssignment('show-feature', false);
+  /// 
+  /// // For logged-in user with attributes
+  /// final userEppo = await Eppo.forSubject(
+  ///   SubjectEvaluation(
+  ///     subject: Subject(
+  ///       subjectKey: 'user-456',
+  ///       subjectAttributes: ContextAttributes(
+  ///         categoricalAttributes: {'country': 'US'},
+  ///         numericAttributes: {'age': 25},
+  ///       ),
+  ///     ),
+  ///   ),
+  /// );
   /// ```
   static Future<EppoPrecomputedClient> forSubject(
-    String subjectKey, {
-    ContextAttributes? subjectAttributes,
-    Map<String, Map<String, Map<String, dynamic>>>? banditActions,
-  }) async {
+    SubjectEvaluation subjectEvaluation,
+  ) async {
     if (_sharedSdkKey == null || _sharedClientConfiguration == null) {
       throw StateError(
           'SDK not initialized. Call Eppo.initialize() first.');
     }
+
+    final subjectKey = subjectEvaluation.subject.subjectKey;
 
     return await _withLock(() async {
       // Check if we already have an instance for this subject (including singleton)
       if (_instances.containsKey(subjectKey)) {
         return _instances[subjectKey]!;
       }
-
-      // Create new instance for this subject
-      final subjectEvaluation = SubjectEvaluation(
-        subject: Subject(
-          subjectKey: subjectKey,
-          subjectAttributes: subjectAttributes,
-        ),
-        banditActions: banditActions,
-      );
 
       final client = EppoPrecomputedClient(
         _sharedSdkKey!,
