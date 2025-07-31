@@ -74,18 +74,24 @@ class Eppo {
       String sdkKey,
       SubjectEvaluation subjectEvaluation,
       ClientConfiguration clientConfiguration) async {
-    // Store shared configuration for multi-instance support
-    _sharedSdkKey = sdkKey;
-    _sharedClientConfiguration = clientConfiguration;
-    
     final subjectKey = subjectEvaluation.subject.subjectKey;
     
-    // Create and store the singleton instance immediately
-    final client = EppoPrecomputedClient(sdkKey, subjectEvaluation, clientConfiguration);
-    _instances[subjectKey] = client;
-    _singletonSubjectKey = subjectKey;
+    // Critical section: store shared configuration and create client instance
+    final client = await _withLock(() async {
+      // Store shared configuration for multi-instance support
+      _sharedSdkKey = sdkKey;
+      _sharedClientConfiguration = clientConfiguration;
+      
+      // Create and store the singleton instance immediately
+      final client = EppoPrecomputedClient(sdkKey, subjectEvaluation, clientConfiguration);
+      _instances[subjectKey] = client;
+      _singletonSubjectKey = subjectKey;
+      
+      return client;
+    });
     
     // Fetch flags in background (client is already available for use)
+    // This network call is outside the lock to avoid blocking other operations
     await client.fetchPrecomputedFlags();
   }
 
