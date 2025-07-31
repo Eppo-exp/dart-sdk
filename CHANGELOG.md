@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0
+
+- Support for managing multiple user contexts (anonymous vs logged-in users)
+- `Eppo.forSubject()` returns `EppoPrecomputedClient` directly for simpler API
+- Added instance management methods: `removeSubject()` and `activeSubjects`
+
 ## 1.1.0
 
 - Added Customer-specific routing
