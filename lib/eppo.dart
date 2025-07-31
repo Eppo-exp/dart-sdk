@@ -1,10 +1,11 @@
+import 'dart:async';
 import 'src/precompute_client.dart';
 import 'src/subject.dart';
 export 'src/assignment_cache.dart'
     show AssignmentCache, InMemoryAssignmentCache, NoOpAssignmentCache;
 export 'src/assignment_logger.dart' show AssignmentLogger, AssignmentEvent;
 export 'src/bandit_logger.dart' show BanditLogger, BanditEvent;
-export 'src/precompute_client.dart' show ClientConfiguration, BanditEvaluation;
+export 'src/precompute_client.dart' show ClientConfiguration, BanditEvaluation, EppoPrecomputedClient;
 export 'src/subject.dart' show SubjectEvaluation, Subject, ContextAttributes;
 export 'src/sdk_version.dart' show SdkPlatform;
 
@@ -16,17 +17,35 @@ class Eppo {
   // Private constructor to prevent direct instantiation
   Eppo._();
 
-  // Singleton instance of the client
-  static EppoPrecomputedClient? _instance;
+  // Registry of client instances by subject key
+  static final Map<String, EppoPrecomputedClient> _instances = {};
+
+  // Simple mutex for thread-safe access
+  static Future<void>? _lock;
+
+  // Configuration shared across instances
+  static String? _sharedSdkKey;
+  static ClientConfiguration? _sharedClientConfiguration;
+  
+  // Track the current singleton subject key for backwards compatibility
+  static String? _singletonSubjectKey;
 
   /// Gets the current client instance.
   ///
   /// Returns null if the SDK has not been initialized.
-  static EppoPrecomputedClient? get instance => _instance;
+  static EppoPrecomputedClient? get instance => 
+      _singletonSubjectKey != null ? _instances[_singletonSubjectKey] : null;
 
   /// Initializes the Eppo SDK with the provided configuration.
   ///
   /// This must be called before any other Eppo methods.
+  ///
+  /// NOTE: Future v2 API will separate SDK configuration from subject evaluation:
+  /// ```dart
+  /// // Proposed v2 API (sync configuration, no fetching)
+  /// Eppo.configure('sdk-key', ClientConfiguration());
+  /// final client = await Eppo.forSubject(subjectEvaluation);
+  /// ```
   ///
   /// Parameters:
   /// - [sdkKey]: Your Eppo SDK key for authentication.
@@ -55,11 +74,25 @@ class Eppo {
       String sdkKey,
       SubjectEvaluation subjectEvaluation,
       ClientConfiguration clientConfiguration) async {
-    // Always create a new instance, replacing any existing one
-    _instance =
-        EppoPrecomputedClient(sdkKey, subjectEvaluation, clientConfiguration);
-
-    await _instance!.fetchPrecomputedFlags();
+    final subjectKey = subjectEvaluation.subject.subjectKey;
+    
+    // Critical section: store shared configuration and create client instance
+    final client = await _withLock(() async {
+      // Store shared configuration for multi-instance support
+      _sharedSdkKey = sdkKey;
+      _sharedClientConfiguration = clientConfiguration;
+      
+      // Create and store the singleton instance immediately
+      final client = EppoPrecomputedClient(sdkKey, subjectEvaluation, clientConfiguration);
+      _instances[subjectKey] = client;
+      _singletonSubjectKey = subjectKey;
+      
+      return client;
+    });
+    
+    // Fetch flags in background (client is already available for use)
+    // This network call is outside the lock to avoid blocking other operations
+    await client.fetchPrecomputedFlags();
   }
 
   /// Gets a string assignment for the specified flag.
@@ -75,7 +108,7 @@ class Eppo {
   /// String buttonText = Eppo.getStringAssignment('button-text-flag', 'Click me');
   /// ```
   static String getStringAssignment(String flagKey, String defaultValue) {
-    return _instance?.getStringAssignment(flagKey, defaultValue) ??
+    return instance?.getStringAssignment(flagKey, defaultValue) ??
         defaultValue;
   }
 
@@ -92,7 +125,7 @@ class Eppo {
   /// bool showFeature = Eppo.getBooleanAssignment('show-new-feature', false);
   /// ```
   static bool getBooleanAssignment(String flagKey, bool defaultValue) {
-    return _instance?.getBooleanAssignment(flagKey, defaultValue) ??
+    return instance?.getBooleanAssignment(flagKey, defaultValue) ??
         defaultValue;
   }
 
@@ -109,7 +142,7 @@ class Eppo {
   /// int maxItems = Eppo.getIntegerAssignment('max-items-flag', 10);
   /// ```
   static int getIntegerAssignment(String flagKey, int defaultValue) {
-    return _instance?.getIntegerAssignment(flagKey, defaultValue) ??
+    return instance?.getIntegerAssignment(flagKey, defaultValue) ??
         defaultValue;
   }
 
@@ -126,7 +159,7 @@ class Eppo {
   /// double discountRate = Eppo.getNumericAssignment('discount-rate', 0.1);
   /// ```
   static double getNumericAssignment(String flagKey, double defaultValue) {
-    return _instance?.getNumericAssignment(flagKey, defaultValue) ??
+    return instance?.getNumericAssignment(flagKey, defaultValue) ??
         defaultValue;
   }
 
@@ -147,7 +180,7 @@ class Eppo {
   /// ```
   static Map<String, dynamic> getJSONAssignment(
       String flagKey, Map<String, dynamic> defaultValue) {
-    return _instance?.getJSONAssignment(flagKey, defaultValue) ?? defaultValue;
+    return instance?.getJSONAssignment(flagKey, defaultValue) ?? defaultValue;
   }
 
   /// Gets a bandit action for the specified flag.
@@ -168,21 +201,134 @@ class Eppo {
   /// String? action = result.action;
   /// ```
   static BanditEvaluation getBanditAction(String flagKey, String defaultValue) {
-    return _instance?.getBanditAction(flagKey, defaultValue) ??
+    return instance?.getBanditAction(flagKey, defaultValue) ??
         BanditEvaluation(variation: defaultValue, action: null);
   }
 
-  /// Resets the SDK to an uninitialized state.
+  /// Gets or creates an SDK instance for a specific subject.
   ///
-  /// This clears the client instance and requires initialize() to be called
-  /// again before using any other methods. Useful for testing or when switching users.
+  /// This allows you to have multiple SDK instances for different users,
+  /// such as one for anonymous users and another for logged-in users.
+  ///
+  /// Parameters:
+  /// - [subjectEvaluation]: Contains the subject information and optional bandit actions.
+  ///
+  /// Returns an EppoPrecomputedClient that provides flag evaluation methods for the specific subject.
+  ///
+  /// Example:
+  /// ```dart
+  /// // For anonymous user
+  /// final anonymousEppo = await Eppo.forSubject(
+  ///   SubjectEvaluation(
+  ///     subject: Subject(subjectKey: 'anonymous-123'),
+  ///   ),
+  /// );
+  /// 
+  /// // For logged-in user with attributes
+  /// final userEppo = await Eppo.forSubject(
+  ///   SubjectEvaluation(
+  ///     subject: Subject(
+  ///       subjectKey: 'user-456',
+  ///       subjectAttributes: ContextAttributes(
+  ///         categoricalAttributes: {'country': 'US'},
+  ///         numericAttributes: {'age': 25},
+  ///       ),
+  ///     ),
+  ///   ),
+  /// );
+  /// ```
+  static Future<EppoPrecomputedClient> forSubject(
+    SubjectEvaluation subjectEvaluation,
+  ) async {
+    if (_sharedSdkKey == null || _sharedClientConfiguration == null) {
+      throw StateError(
+          'SDK not initialized. Call Eppo.initialize() first.');
+    }
+
+    final subjectKey = subjectEvaluation.subject.subjectKey;
+
+    return await _withLock(() async {
+      // Check if we already have an instance for this subject (including singleton)
+      if (_instances.containsKey(subjectKey)) {
+        return _instances[subjectKey]!;
+      }
+
+      final client = EppoPrecomputedClient(
+        _sharedSdkKey!,
+        subjectEvaluation,
+        _sharedClientConfiguration!,
+      );
+
+      // Store the instance immediately so it's available for use
+      _instances[subjectKey] = client;
+
+      // Fetch flags in background (client is already available for flag evaluations)
+      await client.fetchPrecomputedFlags();
+
+      return client;
+    });
+  }
+
+  /// Executes the given function with a lock to ensure thread safety
+  static Future<T> _withLock<T>(Future<T> Function() fn) async {
+    // Wait for any existing lock
+    while (_lock != null) {
+      await _lock;
+    }
+
+    // Create our lock
+    final completer = Completer<void>();
+    _lock = completer.future;
+
+    try {
+      return await fn();
+    } finally {
+      // Release the lock
+      _lock = null;
+      completer.complete();
+    }
+  }
+
+  /// Removes an SDK instance for a specific subject key.
+  ///
+  /// This is useful for cleanup when a user logs out or is no longer active.
+  ///
+  /// Parameters:
+  /// - [subjectKey]: The unique identifier for the subject to remove.
   ///
   /// Example:
   /// ```dart
   /// // When user logs out
+  /// Eppo.removeSubject('user-456');
+  /// ```
+  static void removeSubject(String subjectKey) {
+    _instances.remove(subjectKey);
+    // If this was the singleton subject, clear the singleton reference
+    if (_singletonSubjectKey == subjectKey) {
+      _singletonSubjectKey = null;
+    }
+  }
+
+  /// Gets all active subject keys that have SDK instances.
+  ///
+  /// Returns a list of subject keys that currently have active instances.
+  static List<String> get activeSubjects => _instances.keys.toList();
+
+  /// Resets the SDK to an uninitialized state.
+  ///
+  /// This clears all client instances and requires initialize() to be called
+  /// again before using any other methods. Useful for testing or when switching users.
+  ///
+  /// Example:
+  /// ```dart
+  /// // When app restarts or needs complete reset
   /// Eppo.reset();
   /// ```
   static void reset() {
-    _instance = null;
+    _instances.clear();
+    _sharedSdkKey = null;
+    _sharedClientConfiguration = null;
+    _singletonSubjectKey = null;
   }
 }
+
