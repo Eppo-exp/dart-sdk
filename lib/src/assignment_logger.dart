@@ -29,6 +29,22 @@ class AssignmentEvent {
   /// Additional metadata
   final Map<String, dynamic>? metaData;
 
+  /// Extra logging fields from the evaluation (e.g. holdout identity).
+  ///
+  /// When the subject is in a holdout, this typically includes:
+  /// - `holdoutKey` — the holdout group key
+  /// - `holdoutVariation` — `status_quo` or `all_shipped`
+  ///
+  /// Persist these to your warehouse and map them on the Assignment Source
+  /// holdout columns for holdout analysis.
+  final Map<String, String> extraLogging;
+
+  /// Holdout group key, if present in [extraLogging].
+  String? get holdoutKey => extraLogging['holdoutKey'];
+
+  /// Holdout arm (`status_quo` / `all_shipped`), if present in [extraLogging].
+  String? get holdoutVariation => extraLogging['holdoutVariation'];
+
   /// Creates a new assignment event
   const AssignmentEvent({
     this.allocation,
@@ -40,6 +56,7 @@ class AssignmentEvent {
     required this.timestamp,
     this.subjectAttributes,
     this.metaData,
+    this.extraLogging = const {},
   });
 }
 

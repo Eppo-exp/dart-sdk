@@ -1,5 +1,5 @@
 /// The current SDK version (private)
-const String _sdkVersion = '1.0.0';
+const String _sdkVersion = '1.3.0';
 
 /// Supported SDK platforms
 enum SdkPlatform {

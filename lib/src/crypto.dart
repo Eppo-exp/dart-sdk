@@ -47,7 +47,12 @@ dynamic decodeValue(String encodedValue, String variationType) {
   }
 }
 
-/// Decodes a map of base64 encoded strings
+/// Decodes a map of base64-encoded keys and values.
+///
+/// Matches JS sdk-common `decodeObject`: both keys and values are base64 on the
+/// wire. Non-base64 plaintext keys/values are returned unchanged.
 Map<String, String> decodeStringMap(Map<String, String> encodedMap) {
-  return encodedMap.map((key, value) => MapEntry(key, decodeBase64(value)));
+  return encodedMap.map(
+    (key, value) => MapEntry(decodeBase64(key), decodeBase64(value)),
+  );
 }

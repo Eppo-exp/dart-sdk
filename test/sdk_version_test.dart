@@ -4,7 +4,7 @@ import 'package:test/test.dart';
 void main() {
   group('SDK Version', () {
     test('getSdkVersion returns correct version', () {
-      expect(getSdkVersion(), '1.0.0');
+      expect(getSdkVersion(), '1.3.0');
     });
 
     test('getSdkName returns correct name for dart platform', () {

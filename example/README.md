@@ -38,6 +38,14 @@ class MyAssignmentLogger extends AssignmentLogger {
   @override
   void logAssignment(AssignmentEvent event) {
     print('logAssignment: ${event.featureFlag} ${event.variation} ${event.timestamp}');
+    // For holdout analysis, persist these to your warehouse and map them on
+    // the Assignment Source holdout columns:
+    //   holdoutKey       ← event.holdoutKey / event.extraLogging['holdoutKey']
+    //   holdoutVariation ← event.holdoutVariation / event.extraLogging['holdoutVariation']
+    //                     (status_quo | all_shipped)
+    if (event.holdoutKey != null) {
+      print('  holdout: ${event.holdoutKey} (${event.holdoutVariation})');
+    }
   }
 }
 ```

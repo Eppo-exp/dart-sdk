@@ -15,6 +15,10 @@ void main() {
         timestamp: timestamp,
         subjectAttributes: {'country': 'US', 'age': 30},
         metaData: {'source': 'test'},
+        extraLogging: {
+          'holdoutKey': 'activeHoldout',
+          'holdoutVariation': 'status_quo',
+        },
       );
 
       expect(event.allocation, equals('test-allocation'));
@@ -26,6 +30,25 @@ void main() {
       expect(event.timestamp, equals(timestamp));
       expect(event.subjectAttributes, equals({'country': 'US', 'age': 30}));
       expect(event.metaData, equals({'source': 'test'}));
+      expect(event.extraLogging, equals({
+        'holdoutKey': 'activeHoldout',
+        'holdoutVariation': 'status_quo',
+      }));
+      expect(event.holdoutKey, equals('activeHoldout'));
+      expect(event.holdoutVariation, equals('status_quo'));
+    });
+
+    test('defaults extraLogging to empty and holdout getters to null', () {
+      final event = AssignmentEvent(
+        featureFlag: 'test-flag',
+        format: 'v1',
+        subject: 'user-123',
+        timestamp: DateTime.now(),
+      );
+
+      expect(event.extraLogging, isEmpty);
+      expect(event.holdoutKey, isNull);
+      expect(event.holdoutVariation, isNull);
     });
   });
 

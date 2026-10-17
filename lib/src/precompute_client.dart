@@ -357,6 +357,7 @@ class EppoPrecomputedClient {
       timestamp: DateTime.timestamp(),
       subjectAttributes: subjectAttributes.toJson(),
       metaData: buildLoggerMetadata(),
+      extraLogging: result.extraLogging,
     );
 
     // Check if we've already logged this assignment
