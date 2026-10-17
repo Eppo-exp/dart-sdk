@@ -7,6 +7,13 @@ class MyAssignmentLogger extends AssignmentLogger {
   void logAssignment(AssignmentEvent event) {
     print(
         'logAssignment: ${event.featureFlag} ${event.variation} ${event.timestamp}');
+    // Persist holdout identity for warehouse holdout analysis when present:
+    // event.extraLogging['holdoutKey'] / event.holdoutKey
+    // event.extraLogging['holdoutVariation'] / event.holdoutVariation
+    if (event.holdoutKey != null) {
+      print(
+          '  holdout: ${event.holdoutKey} (${event.holdoutVariation})');
+    }
   }
 }
 

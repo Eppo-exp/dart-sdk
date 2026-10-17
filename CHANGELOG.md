@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0
+
+- Expose `extraLogging` on `AssignmentEvent` so holdout identity (`holdoutKey`, `holdoutVariation`) reaches assignment loggers
+- Add `holdoutKey` / `holdoutVariation` convenience getters on `AssignmentEvent`
+- Fix `decodeStringMap` to base64-decode both keys and values (matching JS sdk-common)
+
 ## 1.2.0
 
 - Support for managing multiple user contexts (anonymous vs logged-in users)

@@ -276,6 +276,88 @@ void main() {
         expect(event.variation, equals('variation-1'));
         expect(event.allocation, equals('allocation-1'));
         expect(event.experiment, equals('string-flag-allocation-1'));
+        expect(event.extraLogging, equals({'key1': 'value1'}));
+      });
+
+      test('logs decoded holdout identity from obfuscated extraLogging',
+          () async {
+        final holdoutFlagHash = getMD5Hash('holdout-flag', salt: salt);
+        final holdoutResponse = {
+          'flags': {
+            holdoutFlagHash: {
+              'allocationKey':
+                  encodeBase64('allocation-1-holdout-activeHoldout'),
+              'variationKey': encodeBase64('control'),
+              'variationType': 'string',
+              'extraLogging': {
+                encodeBase64('holdoutKey'): encodeBase64('activeHoldout'),
+                encodeBase64('holdoutVariation'): encodeBase64('status_quo'),
+              },
+              'doLog': true,
+              'variationValue': encodeBase64('control'),
+            },
+          },
+          'bandits': {},
+          'salt': salt,
+          'format': 'precomputed',
+          'obfuscated': true,
+          'createdAt': '2023-01-01T00:00:00Z',
+          'environment': {'name': 'test-env'},
+        };
+
+        final holdoutHttpClient = MockEppoHttpClient(holdoutResponse);
+        final holdoutApiClient = EppoApiClient(
+          sdkKey: sdkKey,
+          sdkVersion: '1.0.0',
+          sdkPlatform: SdkPlatform.dart,
+          httpClient: holdoutHttpClient,
+        );
+        final holdoutLogger = MockAssignmentLogger();
+        final holdoutClient = EppoPrecomputedClient(
+          sdkKey,
+          SubjectEvaluation(
+            subject: Subject(
+              subjectKey: subjectKey,
+              subjectAttributes: ContextAttributes(
+                categoricalAttributes: {'country': 'US'},
+              ),
+            ),
+          ),
+          ClientConfiguration(
+            sdkPlatform: SdkPlatform.dart,
+            apiClient: holdoutApiClient,
+            assignmentLogger: holdoutLogger,
+            flagAssignmentCache: NoOpAssignmentCache(),
+          ),
+        );
+        await holdoutClient.fetchPrecomputedFlags();
+
+        final variation =
+            holdoutClient.getStringAssignment('holdout-flag', 'default');
+        expect(variation, equals('control'));
+        expect(holdoutLogger.loggedEvents, hasLength(1));
+
+        final event = holdoutLogger.loggedEvents.first;
+        expect(event.extraLogging, equals({
+          'holdoutKey': 'activeHoldout',
+          'holdoutVariation': 'status_quo',
+        }));
+        expect(event.holdoutKey, equals('activeHoldout'));
+        expect(event.holdoutVariation, equals('status_quo'));
+        expect(
+          event.allocation,
+          equals('allocation-1-holdout-activeHoldout'),
+        );
+      });
+
+      test('logs empty extraLogging when holdout fields are absent', () {
+        mockLogger.clear();
+        client.getBooleanAssignment('boolean-flag', false);
+
+        expect(mockLogger.loggedEvents, hasLength(1));
+        expect(mockLogger.loggedEvents.first.extraLogging, isEmpty);
+        expect(mockLogger.loggedEvents.first.holdoutKey, isNull);
+        expect(mockLogger.loggedEvents.first.holdoutVariation, isNull);
       });
 
       test('logs different flag assignments separately', () {
